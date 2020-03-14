@@ -49,11 +49,11 @@ bool onFlag = false;
 //////////////////////////////////////
 void setup() {
 
+  // Check to see if genesis block has been written to memory.
+  // Construct Genesis block in ONE node.
   struct block genesis;
   genesis.timestamp = 0;
   genesis.prevHash = 0;
-  printf("size of genesis is %d\n", sizeof(block) );
-
 
   Serial.begin(115200);
   pinMode(LED, OUTPUT);
@@ -74,13 +74,10 @@ void setup() {
       blinkNoNodes.delay(BLINK_DURATION);
 
       if (blinkNoNodes.isLastIteration()) {
-        // Finished blinking. Reset task for next run
-        // blink number of nodes (including this node) times
+        // Finished blinking. Reset task for next run // blink number of nodes (including this node) times
         blinkNoNodes.setIterations((mesh.getNodeList().size() + 1) * 2);
         // Calculate delay based on current mesh time and BLINK_PERIOD
-        // This results in blinks between nodes being synced
-        blinkNoNodes.enableDelayed(BLINK_PERIOD -
-            (mesh.getNodeTime() % (BLINK_PERIOD*1000))/1000);
+        blinkNoNodes.enableDelayed(BLINK_PERIOD - (mesh.getNodeTime() % (BLINK_PERIOD*1000))/1000);
       }
   });
   userScheduler.addTask(blinkNoNodes);
@@ -161,28 +158,3 @@ void nodeTimeAdjustedCallback(int32_t offset) {
 void delayReceivedCallback(uint32_t from, int32_t delay) {
   Serial.printf("Delay to node %u is %d us\n", from, delay);
 }
-
-
-// void setup() {
-//   Serial.begin(115200);
-//
-// }
-//
-// void loop() {
-//   uint32 chipId = system_get_chip_id();
-//   Serial.printf("%d\n", chipId);
-//   // usage as String
-//   // SHA1:a9993e364706816aba3e25717850c26c9cd0d89d
-//   Serial.print("SHA1:");
-//   Serial.println(sha1("abc"));
-//   // usage as ptr
-//   SHA1:a94a8fe5ccb19ba61c4c0873d391e987982fbbd3
-//   uint8_t hash[20];
-//   sha1("test", &hash[0]);
-//   Serial.print("SHA1:");
-//   for (uint16_t i = 0; i < 20; i++) {
-//     Serial.printf("%02x", hash[i]);
-//   }
-//   Serial.println();
-//   delay(1000);
-// }

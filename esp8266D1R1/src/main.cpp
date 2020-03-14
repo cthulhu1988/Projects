@@ -1,23 +1,12 @@
-
-//************************************************************
-// this is a simple example that uses the easyMesh library
-//
-// 1. blinks led once for every node on the mesh
-// 2. blink cycle repeats every BLINK_PERIOD
-// 3. sends a silly message to every node on the mesh at a random time between 1 and 5 seconds
-// 4. prints anything it receives to Serial.print
-//
-//
-//************************************************************
 #include <painlessMesh.h>
+#include <Hash.h>
+#include "ESP8266WiFi.h"
+#include <SPI.h>
+#include <MFRC522.h>
 
-// some gpio pin that is connected to an LED...
-// on my rig, this is 5, change to the right number of your LED.
 #define   LED             2       // GPIO number of connected LED, ON ESP-12 IS GPIO2
-
 #define   BLINK_PERIOD    3000 // milliseconds until cycle repeat
 #define   BLINK_DURATION  100  // milliseconds LED is on for
-
 #define   MESH_SSID       "NETGEAR94"
 #define   MESH_PASSWORD   "shinycarrot"
 #define   MESH_PORT       5555
@@ -29,28 +18,29 @@ void newConnectionCallback(uint32_t nodeId);
 void changedConnectionCallback();
 void nodeTimeAdjustedCallback(int32_t offset);
 void delayReceivedCallback(uint32_t from, int32_t delay);
+void sendMessage() ;
+Task taskSendMessage( TASK_SECOND * 1, TASK_FOREVER, &sendMessage ); // start with a one second interval
 //////////////////////////////////////////////////////////////////
 
+
+//////////////Class instantiation ?///////////////////////////
 Scheduler     userScheduler; // to control your personal task
 painlessMesh  mesh;
 
+
+//////////////////Variables /////////////////////////////////////
 bool calc_delay = false;
 SimpleList<uint32_t> nodes;
-
-void sendMessage() ; // Prototype
-Task taskSendMessage( TASK_SECOND * 1, TASK_FOREVER, &sendMessage ); // start with a one second interval
-
-// Task to blink the number of nodes
+uint32 chipId = system_get_chip_id();
 Task blinkNoNodes;
 bool onFlag = false;
 
-
+//////////////////////////////////////
 ////////// SETUP LOOP ////////////////
+//////////////////////////////////////
 void setup() {
   Serial.begin(115200);
-
   pinMode(LED, OUTPUT);
-
   // Act on the mesh instantiation //
   mesh.setDebugMsgTypes(ERROR | DEBUG);  // set before init() so that you can see error messages
   mesh.init(MESH_SSID, MESH_PASSWORD, &userScheduler, MESH_PORT);
@@ -69,6 +59,8 @@ void setup() {
         onFlag = false;
       else
         onFlag = true;
+
+      //onFlag? onFlag = false : onFlag = true;
       blinkNoNodes.delay(BLINK_DURATION);
 
       if (blinkNoNodes.isLastIteration()) {
@@ -83,18 +75,13 @@ void setup() {
   });
   userScheduler.addTask(blinkNoNodes);
   blinkNoNodes.enable();
-
   randomSeed(analogRead(A0));
 }
 ///////////////////////// END SETUP LOOP ////////////////////////////////////////////
-
-
-
 void loop() {
   mesh.update();
   digitalWrite(LED, !onFlag);
 }
-
 
 
 //////////////////////////////// Painless Mesh Functions /////////////////////////////////////

@@ -70,13 +70,7 @@ void setup() {
   taskSendMessage.enable();
 
   blinkNoNodes.set(BLINK_PERIOD, (mesh.getNodeList().size() + 1) * 2, []() {
-      // If on, switch off, else switch on
-      // if (onFlag)
-      //   onFlag = false;
-      // else
-      //   onFlag = true;
-
-      onFlag? onFlag = false : onFlag = true;
+      onFlag ? onFlag = false : onFlag = true;
       blinkNoNodes.delay(BLINK_DURATION);
 
       if (blinkNoNodes.isLastIteration()) {

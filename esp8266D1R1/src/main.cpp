@@ -22,6 +22,15 @@ void sendMessage() ;
 Task taskSendMessage( TASK_SECOND * 1, TASK_FOREVER, &sendMessage ); // start with a one second interval
 //////////////////////////////////////////////////////////////////
 
+//// Need NTP clock to get time stamp
+
+struct block {
+  int timestamp;
+  char* assetTag;
+  int dataHash;
+  int prevHash;
+};
+
 
 //////////////Class instantiation ?///////////////////////////
 Scheduler     userScheduler; // to control your personal task
@@ -39,6 +48,13 @@ bool onFlag = false;
 ////////// SETUP LOOP ////////////////
 //////////////////////////////////////
 void setup() {
+
+  struct block genesis;
+  genesis.timestamp = 0;
+  genesis.prevHash = 0;
+  printf("size of genesis is %d\n", sizeof(block) );
+
+
   Serial.begin(115200);
   pinMode(LED, OUTPUT);
   // Act on the mesh instantiation //
@@ -55,12 +71,12 @@ void setup() {
 
   blinkNoNodes.set(BLINK_PERIOD, (mesh.getNodeList().size() + 1) * 2, []() {
       // If on, switch off, else switch on
-      if (onFlag)
-        onFlag = false;
-      else
-        onFlag = true;
+      // if (onFlag)
+      //   onFlag = false;
+      // else
+      //   onFlag = true;
 
-      //onFlag? onFlag = false : onFlag = true;
+      onFlag? onFlag = false : onFlag = true;
       blinkNoNodes.delay(BLINK_DURATION);
 
       if (blinkNoNodes.isLastIteration()) {
@@ -79,6 +95,7 @@ void setup() {
 }
 ///////////////////////// END SETUP LOOP ////////////////////////////////////////////
 void loop() {
+  //printf("size of genesis is %d\n", sizeof(block) );
   mesh.update();
   digitalWrite(LED, !onFlag);
 }

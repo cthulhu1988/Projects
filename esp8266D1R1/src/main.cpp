@@ -3,22 +3,24 @@
 #include "ESP8266WiFi.h"
 #include <SPI.h>
 #include <MFRC522.h>
-
+/////////////////////////////////////////////////////////////////////////////////////
 #define   LED             2       // GPIO number of connected LED, ON ESP-12 IS GPIO2
 #define   BLINK_PERIOD    3000 // milliseconds until cycle repeat
-#define   BLINK_DURATION  100  // milliseconds LED is on for
+#define   BLINK_DURATION  200  // milliseconds LED is on for
+// These are network credentials unique to the peer-to-peer network.
 #define   MESH_SSID       "NETGEAR94"
 #define   MESH_PASSWORD   "shinycarrot"
 #define   MESH_PORT       5555
 
 //////////////////// Function Prototypes /////////////////////////
 void sendMessage();
+// messages sent to this node:
 void receivedCallback(uint32_t from, String & msg);
 void newConnectionCallback(uint32_t nodeId);
 void changedConnectionCallback();
 void nodeTimeAdjustedCallback(int32_t offset);
 void delayReceivedCallback(uint32_t from, int32_t delay);
-void sendMessage() ;
+//void sendMessage() ;
 Task taskSendMessage( TASK_SECOND * 1, TASK_FOREVER, &sendMessage ); // start with a one second interval
 //////////////////////////////////////////////////////////////////
 
@@ -60,9 +62,13 @@ void setup() {
   // Act on the mesh instantiation //
   mesh.setDebugMsgTypes(ERROR | DEBUG);  // set before init() so that you can see error messages
   mesh.init(MESH_SSID, MESH_PASSWORD, &userScheduler, MESH_PORT);
+  // Sets a callback routine for any messages addressed to this node
   mesh.onReceive(&receivedCallback);
+  // fires everytime a new connection is made.
   mesh.onNewConnection(&newConnectionCallback);
+  // fires when there is a change in network topology.
   mesh.onChangedConnections(&changedConnectionCallback);
+  // fires every time local time is adjused to match the mesh.
   mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
   mesh.onNodeDelayReceived(&delayReceivedCallback);
 
@@ -72,7 +78,6 @@ void setup() {
   blinkNoNodes.set(BLINK_PERIOD, (mesh.getNodeList().size() + 1) * 2, []() {
       onFlag ? onFlag = false : onFlag = true;
       blinkNoNodes.delay(BLINK_DURATION);
-
       if (blinkNoNodes.isLastIteration()) {
         // Finished blinking. Reset task for next run // blink number of nodes (including this node) times
         blinkNoNodes.setIterations((mesh.getNodeList().size() + 1) * 2);
@@ -85,11 +90,20 @@ void setup() {
   randomSeed(analogRead(A0));
 }
 ///////////////////////// END SETUP LOOP ////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////START MAIN LOOP ////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+
 void loop() {
   //printf("size of genesis is %d\n", sizeof(block) );
+  // update runs various maintainance funtions
   mesh.update();
   digitalWrite(LED, !onFlag);
 }
+
+
+//////////////////////////END END END -->> MAIN LOOP ////////////////////////////////////////////
 
 
 //////////////////////////////// Painless Mesh Functions /////////////////////////////////////

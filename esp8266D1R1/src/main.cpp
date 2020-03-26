@@ -3,6 +3,8 @@
 #include "ESP8266WiFi.h"
 #include <SPI.h>
 #include <MFRC522.h>
+#include "Arduino.h"
+#include "FS.h"
 /////////////////////////////////////////////////////////////////////////////////////
 #define   LED             2       // GPIO number of connected LED, ON ESP-12 IS GPIO2
 #define   BLINK_PERIOD    3000 // milliseconds until cycle repeat
@@ -11,8 +13,14 @@
 #define   MESH_SSID       "NETGEAR94"
 #define   MESH_PASSWORD   "shinycarrot"
 #define   MESH_PORT       5555
+//////////////////////////////RFID VARIABLES //////////////////////////////////
+// Output pins for the RFID SCANNER
+constexpr uint8_t RST_PIN =  0;
+constexpr uint8_t SS_PIN =  15;
+MFRC522 mfrc522(SS_PIN, RST_PIN);  // Create MFRC522 instance
+//////////////////////////////////////////////////////////////////////////////
 
-//////////////////// Function Prototypes /////////////////////////
+//////////////////// PAINLESS MESH Function Prototypes /////////////////////////
 void sendMessage();
 // messages sent to this node:
 void receivedCallback(uint32_t from, String & msg);
@@ -24,8 +32,10 @@ void delayReceivedCallback(uint32_t from, int32_t delay);
 Task taskSendMessage( TASK_SECOND * 1, TASK_FOREVER, &sendMessage ); // start with a one second interval
 //////////////////////////////////////////////////////////////////
 
-//// Need NTP clock to get time stamp
+///// RFID function prototypes ///////
+void dump_byte_array(byte *buffer, byte bufferSize);
 
+////// Blockchain Struct //////////
 struct block {
   int timestamp;
   char* assetTag;
@@ -34,7 +44,9 @@ struct block {
 };
 
 
-//////////////Class instantiation ?///////////////////////////
+//int readSize = file.readBytes((byte*) block, sizeof(block));
+
+//////////////Class instantiation OF MESH ///////////////////////////
 Scheduler     userScheduler; // to control your personal task
 painlessMesh  mesh;
 
@@ -45,19 +57,40 @@ SimpleList<uint32_t> nodes;
 uint32 chipId = system_get_chip_id();
 Task blinkNoNodes;
 bool onFlag = false;
+bool success = false;
+bool scan = true;
 
 //////////////////////////////////////
 ////////// SETUP LOOP ////////////////
 //////////////////////////////////////
 void setup() {
+  Serial.begin(115200);
+  delay(4000);
+  //// RFID SCANNER
+  SPI.begin();      // Init SPI bus
+  mfrc522.PCD_Init();   // Init MFRC522
+  mfrc522.PCD_DumpVersionToSerial();  // Show details of PCD - MFRC522 Card Reader details
+  //////////////////////////
+
+
+  // Try to mount the SPIFFS system.
+  if(!SPIFFS.begin()){
+    Serial.println("ERROR mounting system");
+    return;
+  } else {Serial.println("Spiffs MOUNTED");}
+  // Open file to write to
+  File f = SPIFFS.open("/chain.txt", "w");
+  if (!f) {
+    Serial.println("file open failed");
+  }
 
   // Check to see if genesis block has been written to memory.
   // Construct Genesis block in ONE node.
+
   struct block genesis;
   genesis.timestamp = 0;
   genesis.prevHash = 0;
 
-  Serial.begin(115200);
   pinMode(LED, OUTPUT);
   // Act on the mesh instantiation //
   mesh.setDebugMsgTypes(ERROR | DEBUG);  // set before init() so that you can see error messages
@@ -72,6 +105,7 @@ void setup() {
   mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
   mesh.onNodeDelayReceived(&delayReceivedCallback);
 
+// Adding tasks to the queue.
   userScheduler.addTask( taskSendMessage );
   taskSendMessage.enable();
 
@@ -91,22 +125,66 @@ void setup() {
 }
 ///////////////////////// END SETUP LOOP ////////////////////////////////////////////
 
+
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////START MAIN LOOP ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
-
 void loop() {
   //printf("size of genesis is %d\n", sizeof(block) );
   // update runs various maintainance funtions
   mesh.update();
   digitalWrite(LED, !onFlag);
+
+          /// RFID ///
+  if ( ! mfrc522.PICC_IsNewCardPresent()) {
+    delay(50);
+    return;
+  }
+
+  // Select one of the cards
+  if ( ! mfrc522.PICC_ReadCardSerial()) {
+    delay(50);
+    return;
+  }
+
+  // Show some details of the PICC (that is: the tag/card)
+  Serial.print(F("Card UID:"));
+  dump_byte_array(mfrc522.uid.uidByte, mfrc522.uid.size);
+  Serial.println();
+
+}
+//////////////////////////////////////END LOOP ///////////////////////////////////////
+
+//////////////////// RFID FUNCTIONS /////////////////////////////////////////
+// Helper routine to dump a byte array as hex values to Serial
+void dump_byte_array(byte *buffer, byte bufferSize) {
+  for (byte i = 0; i < bufferSize; i++) {
+    Serial.print(buffer[i] < 0x10 ? " 0" : " ");
+    Serial.print(buffer[i], HEX);
+  }
 }
 
 
+/////////////////////// END RFID FUNCTIONS /////////////////////////////////////////
+
+void ReadFlashFile(){
+  File f = SPIFFS.open("/chain.txt", "r");
+  while(f.available()){
+    Serial.write(f.read());
+  }
+}
+
+void DeleteFlashFiles(){
+  SPIFFS.remove("/chain.txt");
+}
 //////////////////////////END END END -->> MAIN LOOP ////////////////////////////////////////////
 
 
 //////////////////////////////// Painless Mesh Functions /////////////////////////////////////
+void sendUpdateToNodes(){
+
+}
+
 void sendMessage() {
   String msg = "Hello from node ";
   msg += mesh.getNodeId();
@@ -124,8 +202,9 @@ void sendMessage() {
   }
 
   Serial.printf("Sending message: %s\n", msg.c_str());
-  // set an interval to send a message at random times.
-  taskSendMessage.setInterval( random(TASK_SECOND * 1, TASK_SECOND * 5));  // between 1 and 5 seconds
+
+  // set an interval to send a message at random times. DO NOT HAVE TO USE
+  //taskSendMessage.setInterval( random(TASK_SECOND * 5, TASK_SECOND * 10));  // between 1 and 5 seconds
 }
 
 // from the onReceive method, from is the node that is sending. The message can be anything.

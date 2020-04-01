@@ -30,8 +30,8 @@ void delayReceivedCallback(uint32_t from, int32_t delay);
 
 void sendMessage() ;
 Task taskSendMessage( TASK_SECOND * 1, TASK_FOREVER, &sendMessage ); // start with a one second interval
-void sendUpdateToNodes();
-Task taskSendDataBlock(TASK_SECOND * 1, TASK_FOREVER, &sendUpdateToNodes);
+//void sendUpdateToNodes();
+//Task taskSendDataBlock(TASK_SECOND * 1, TASK_FOREVER, &sendUpdateToNodes);
 //////////////////////////////////////////////////////////////////
 
 ///// RFID function prototypes ///////
@@ -144,12 +144,13 @@ void loop() {
           /// RFID ///
   if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial())
   {
+    newAssetTag = true;
     inStringHex = "";
     for (byte i = 0; i < 4; i++) {
     inStringHex += String(mfrc522.uid.uidByte[i], HEX);
     }
-    //Serial.print(inStringHex);
-    newAssetTag = true;
+    Serial.print(inStringHex);
+
   }
 
 }
@@ -180,29 +181,11 @@ void DeleteFlashFiles(){
 
 
 //////////////////////////////// Painless Mesh Functions /////////////////////////////////////
-void sendUpdateToNodes(){
-  if (newAssetTag) {
-    mesh.sendBroadcast(inStringHex);
-    Serial.print("Hex is sent");
-    Serial.print(inStringHex);
-    newAssetTag = false;
-    // Send a node to a packet to meashure the trip delay //
-  }
-  if (calc_delay) {
-    SimpleList<uint32_t>::iterator node = nodes.begin();
-    while (node != nodes.end()) {
-      mesh.startDelayMeas(*node);
-      node++;
-    }
-    calc_delay = false;
-  }
-}
-
 
 
 void sendMessage() {
   if (newAssetTag) {
-    Serial.print("THis is now set to true");
+    Serial.print("THis is now set to true    ");
 
 
     Serial.print(inStringHex);
@@ -211,6 +194,7 @@ void sendMessage() {
     //msg += mesh.getNodeId();
     //msg += " myFreeMemory: " + String(ESP.getFreeHeap());
     mesh.sendBroadcast(msg);
+    }
 
     // Send a node to a packet to meashure the trip delay //
     if (calc_delay) {
@@ -222,7 +206,7 @@ void sendMessage() {
       calc_delay = false;
     }
     newAssetTag = false;
-  }
+
   //Serial.printf("Sending message: %s\n", msg.c_str());
 
   // set an interval to send a message at random times. DO NOT HAVE TO USE

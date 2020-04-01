@@ -60,6 +60,7 @@ bool onFlag = false;
 bool success = false;
 bool scan = true;
 
+String inStringHex = "";
 //////////////////////////////////////
 ////////// SETUP LOOP ////////////////
 //////////////////////////////////////
@@ -136,33 +137,21 @@ void loop() {
   digitalWrite(LED, !onFlag);
 
           /// RFID ///
-  if ( ! mfrc522.PICC_IsNewCardPresent()) {
-    delay(50);
-    return;
-  }
+  if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial())
+  {
+    Serial.print("Card UID:");
+    for (byte i = 0; i < 4; i++) {
+    inStringHex += String(mfrc522.uid.uidByte[i], HEX);
+    }
+    Serial.print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+    Serial.print(inStringHex);
+    Serial.print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 
-  // Select one of the cards
-  if ( ! mfrc522.PICC_ReadCardSerial()) {
-    delay(50);
-    return;
   }
-
-  // Show some details of the PICC (that is: the tag/card)
-  Serial.print(F("Card UID:"));
-  dump_byte_array(mfrc522.uid.uidByte, mfrc522.uid.size);
-  Serial.println();
 
 }
 //////////////////////////////////////END LOOP ///////////////////////////////////////
 
-//////////////////// RFID FUNCTIONS /////////////////////////////////////////
-// Helper routine to dump a byte array as hex values to Serial
-void dump_byte_array(byte *buffer, byte bufferSize) {
-  for (byte i = 0; i < bufferSize; i++) {
-    Serial.print(buffer[i] < 0x10 ? " 0" : " ");
-    Serial.print(buffer[i], HEX);
-  }
-}
 
 
 /////////////////////// END RFID FUNCTIONS /////////////////////////////////////////
@@ -204,7 +193,7 @@ void sendMessage() {
   Serial.printf("Sending message: %s\n", msg.c_str());
 
   // set an interval to send a message at random times. DO NOT HAVE TO USE
-  //taskSendMessage.setInterval( random(TASK_SECOND * 5, TASK_SECOND * 10));  // between 1 and 5 seconds
+  taskSendMessage.setInterval( random(TASK_SECOND * 5, TASK_SECOND * 10));  // between 1 and 5 seconds
 }
 
 // from the onReceive method, from is the node that is sending. The message can be anything.

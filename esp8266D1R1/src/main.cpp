@@ -20,22 +20,22 @@ constexpr uint8_t RST_PIN =  0; constexpr uint8_t SS_PIN =  15; MFRC522 mfrc522(
 bool isGenesisBlock = false;
 bool newAssetTag = false;
 //////////////////// PAINLESS MESH Function Prototypes /////////////////////////
-//void sendMessage();
-// messages sent to this node:
 void receivedCallback(uint32_t from, String & msg);
 void newConnectionCallback(uint32_t nodeId);
 void changedConnectionCallback();
 void nodeTimeAdjustedCallback(int32_t offset);
 void delayReceivedCallback(uint32_t from, int32_t delay);
 
+long long int trustedNodes[3] = {2731010923, 2731822602};
+
 void sendMessage() ;
 Task taskSendMessage( TASK_SECOND * 1, TASK_FOREVER, &sendMessage ); // start with a one second interval
 //////////////////////////////////////////////////////////////////
 
-
 ////// Blockchain Struct //////////
 struct block {
   int timestamp;
+  String nodeOriginator;
   String assetTag;
   int dataHash;
   int prevHash;
@@ -47,6 +47,7 @@ struct block {
 Scheduler     userScheduler; // to control your personal task
 painlessMesh  mesh;
 
+
 //////////////////Variables /////////////////////////////////////
 bool calc_delay = false;
 SimpleList<uint32_t> nodes;
@@ -56,6 +57,10 @@ bool onFlag = false;
 bool success = false;
 bool scan = true;
 String inStringHex = "";
+String thisNodeStr = "";
+
+
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////// SETUP LOOP ///////////////////////////////////////////////////////////////////////////
@@ -115,6 +120,9 @@ void setup() {
   userScheduler.addTask(blinkNoNodes);
   blinkNoNodes.enable();
   randomSeed(analogRead(A0));
+  thisNodeStr += String(mesh.getNodeId());
+
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -132,7 +140,6 @@ void loop() {
   // update runs various maintainance funtions
   mesh.update();
   digitalWrite(LED, !onFlag);
-
   /// RFID ///
   if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial())
   {
@@ -141,6 +148,9 @@ void loop() {
     inStringHex += String(mfrc522.uid.uidByte[i], HEX);
     }
     //Serial.print(inStringHex);
+    //Serial.printf("String ( THIS )node value: %s\n", &thisNodeStr);
+
+
   }
   /////////////////////// END RFID FUNCTIONS /////////////////////////////////////////
 
@@ -172,8 +182,8 @@ void DeleteFlashFiles(){
 //////////////////////////////// Painless Mesh Functions /////////////////////////////////////
 void sendMessage() {
   if (newAssetTag) {
-    Serial.print(inStringHex);
-    String msg = "Asset Tag: ";
+    //Serial.print(inStringHex);
+    String msg = "";
     msg += inStringHex;
     //msg += mesh.getNodeId();
     //msg += " myFreeMemory: " + String(ESP.getFreeHeap());
@@ -192,14 +202,13 @@ void sendMessage() {
     newAssetTag = false;
 
   //Serial.printf("Sending message: %s\n", msg.c_str());
-
   // set an interval to send a message at random times. DO NOT HAVE TO USE
-  //taskSendMessage.setInterval( random(TASK_SECOND * 5, TASK_SECOND * 10));  // between 1 and 5 seconds
+  taskSendMessage.setInterval( random(TASK_SECOND * 1, TASK_SECOND * 2));  // between 1 and 5 seconds
 }
 
 // from the onReceive method, from is the node that is sending. The message can be anything.
 void receivedCallback(uint32_t from, String & msg) {
-  Serial.printf("Received from %u msg=%s\n", from, msg.c_str());
+  Serial.printf("Node Number of Sender: %u %s\n", from, msg.c_str());
 }
 
 // When a new node is connected Fires everytime a node makes a new connection //
@@ -209,8 +218,8 @@ void newConnectionCallback(uint32_t nodeId) {
   blinkNoNodes.setIterations((mesh.getNodeList().size() + 1) * 2);
   blinkNoNodes.enableDelayed(BLINK_PERIOD - (mesh.getNodeTime() % (BLINK_PERIOD*1000))/1000);
 
-  Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
-  Serial.printf("--> startHere: New Connection, %s\n", mesh.subConnectionJson(true).c_str());
+  Serial.printf("New Connection, nodeId = %u\n", nodeId);
+  Serial.printf("New Connection, %s\n", mesh.subConnectionJson(true).c_str());
 }
 
 void changedConnectionCallback() {

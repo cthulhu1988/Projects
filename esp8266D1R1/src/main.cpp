@@ -30,12 +30,8 @@ void delayReceivedCallback(uint32_t from, int32_t delay);
 
 void sendMessage() ;
 Task taskSendMessage( TASK_SECOND * 1, TASK_FOREVER, &sendMessage ); // start with a one second interval
-//void sendUpdateToNodes();
-//Task taskSendDataBlock(TASK_SECOND * 1, TASK_FOREVER, &sendUpdateToNodes);
 //////////////////////////////////////////////////////////////////
 
-///// RFID function prototypes ///////
-void dump_byte_array(byte *buffer, byte bufferSize);
 
 ////// Blockchain Struct //////////
 struct block {
@@ -45,13 +41,11 @@ struct block {
   int prevHash;
 };
 
-
 //int readSize = file.readBytes((byte*) block, sizeof(block));
 
 //////////////Class instantiation OF MESH ///////////////////////////
 Scheduler     userScheduler; // to control your personal task
 painlessMesh  mesh;
-
 
 //////////////////Variables /////////////////////////////////////
 bool calc_delay = false;
@@ -61,8 +55,8 @@ Task blinkNoNodes;
 bool onFlag = false;
 bool success = false;
 bool scan = true;
-
 String inStringHex = "";
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////// SETUP LOOP ///////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -105,23 +99,16 @@ void setup() {
   // fires when there is a change in network topology.
   mesh.onChangedConnections(&changedConnectionCallback);
   // fires every time local time is adjused to match the mesh.
-  mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
-  mesh.onNodeDelayReceived(&delayReceivedCallback);
-
+  mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback); mesh.onNodeDelayReceived(&delayReceivedCallback);
 // Adding tasks to the queue.
-  userScheduler.addTask( taskSendMessage );
-  taskSendMessage.enable();
+  userScheduler.addTask( taskSendMessage ); taskSendMessage.enable();
 
-  // userScheduler.addTask(taskSendDataBlock);
-  // taskSendDataBlock.enable();
-
+  // Blinks number of times to indicate how many nodes are connected to the mesh
   blinkNoNodes.set(BLINK_PERIOD, (mesh.getNodeList().size() + 1) * 2, []() {
       onFlag ? onFlag = false : onFlag = true;
       blinkNoNodes.delay(BLINK_DURATION);
       if (blinkNoNodes.isLastIteration()) {
-        // Finished blinking. Reset task for next run // blink number of nodes (including this node) times
         blinkNoNodes.setIterations((mesh.getNodeList().size() + 1) * 2);
-        // Calculate delay based on current mesh time and BLINK_PERIOD
         blinkNoNodes.enableDelayed(BLINK_PERIOD - (mesh.getNodeTime() % (BLINK_PERIOD*1000))/1000);
       }
   });
@@ -129,7 +116,12 @@ void setup() {
   blinkNoNodes.enable();
   randomSeed(analogRead(A0));
 }
+
+////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////// END SETUP LOOP ////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+
+
 
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -141,17 +133,18 @@ void loop() {
   mesh.update();
   digitalWrite(LED, !onFlag);
 
-          /// RFID ///
+  /// RFID ///
   if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial())
   {
-    newAssetTag = true;
-    inStringHex = "";
+    newAssetTag = true; inStringHex = "";
     for (byte i = 0; i < 4; i++) {
     inStringHex += String(mfrc522.uid.uidByte[i], HEX);
     }
-    Serial.print(inStringHex);
-
+    //Serial.print(inStringHex);
   }
+  /////////////////////// END RFID FUNCTIONS /////////////////////////////////////////
+
+  /// more functions //
 
 }
 
@@ -161,11 +154,7 @@ void loop() {
 
 
 
-/////////////////////// END RFID FUNCTIONS /////////////////////////////////////////
-
-
 //////////////////////////WRITE TO DISK /////////////////////////////////////////////
-
 void ReadFlashFile(){
   File f = SPIFFS.open("/chain.txt", "r");
   while(f.available()){
@@ -181,13 +170,8 @@ void DeleteFlashFiles(){
 
 
 //////////////////////////////// Painless Mesh Functions /////////////////////////////////////
-
-
 void sendMessage() {
   if (newAssetTag) {
-    Serial.print("THis is now set to true    ");
-
-
     Serial.print(inStringHex);
     String msg = "Asset Tag: ";
     msg += inStringHex;
@@ -210,7 +194,7 @@ void sendMessage() {
   //Serial.printf("Sending message: %s\n", msg.c_str());
 
   // set an interval to send a message at random times. DO NOT HAVE TO USE
-  taskSendMessage.setInterval( random(TASK_SECOND * 5, TASK_SECOND * 10));  // between 1 and 5 seconds
+  //taskSendMessage.setInterval( random(TASK_SECOND * 5, TASK_SECOND * 10));  // between 1 and 5 seconds
 }
 
 // from the onReceive method, from is the node that is sending. The message can be anything.

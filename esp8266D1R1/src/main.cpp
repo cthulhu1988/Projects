@@ -19,6 +19,7 @@ constexpr uint8_t RST_PIN =  0;
 constexpr uint8_t SS_PIN =  15;
 MFRC522 mfrc522(SS_PIN, RST_PIN);  // Create MFRC522 instance
 //////////////////////////////////////////////////////////////////////////////
+bool isGenesisBlock = false;
 
 //////////////////// PAINLESS MESH Function Prototypes /////////////////////////
 void sendMessage();
@@ -38,7 +39,7 @@ void dump_byte_array(byte *buffer, byte bufferSize);
 ////// Blockchain Struct //////////
 struct block {
   int timestamp;
-  char* assetTag;
+  String assetTag;
   int dataHash;
   int prevHash;
 };
@@ -139,13 +140,11 @@ void loop() {
           /// RFID ///
   if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial())
   {
-    Serial.print("Card UID:");
+    inStringHex = "";
     for (byte i = 0; i < 4; i++) {
     inStringHex += String(mfrc522.uid.uidByte[i], HEX);
     }
-    Serial.print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
     Serial.print(inStringHex);
-    Serial.print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 
   }
 

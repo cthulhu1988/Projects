@@ -15,22 +15,23 @@
 #define   MESH_PORT       5555
 //////////////////////////////RFID VARIABLES //////////////////////////////////
 // Output pins for the RFID SCANNER
-constexpr uint8_t RST_PIN =  0;
-constexpr uint8_t SS_PIN =  15;
-MFRC522 mfrc522(SS_PIN, RST_PIN);  // Create MFRC522 instance
+constexpr uint8_t RST_PIN =  0; constexpr uint8_t SS_PIN =  15; MFRC522 mfrc522(SS_PIN, RST_PIN);  // Create MFRC522 instance
 //////////////////////////////////////////////////////////////////////////////
 bool isGenesisBlock = false;
-
+bool newAssetTag = false;
 //////////////////// PAINLESS MESH Function Prototypes /////////////////////////
-void sendMessage();
+//void sendMessage();
 // messages sent to this node:
 void receivedCallback(uint32_t from, String & msg);
 void newConnectionCallback(uint32_t nodeId);
 void changedConnectionCallback();
 void nodeTimeAdjustedCallback(int32_t offset);
 void delayReceivedCallback(uint32_t from, int32_t delay);
-//void sendMessage() ;
+
+void sendMessage() ;
 Task taskSendMessage( TASK_SECOND * 1, TASK_FOREVER, &sendMessage ); // start with a one second interval
+void sendUpdateToNodes();
+Task taskSendDataBlock(TASK_SECOND * 1, TASK_FOREVER, &sendUpdateToNodes);
 //////////////////////////////////////////////////////////////////
 
 ///// RFID function prototypes ///////
@@ -62,9 +63,9 @@ bool success = false;
 bool scan = true;
 
 String inStringHex = "";
-//////////////////////////////////////
-////////// SETUP LOOP ////////////////
-//////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+////////// SETUP LOOP ///////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
 void setup() {
   Serial.begin(115200);
   delay(4000);
@@ -111,6 +112,9 @@ void setup() {
   userScheduler.addTask( taskSendMessage );
   taskSendMessage.enable();
 
+  // userScheduler.addTask(taskSendDataBlock);
+  // taskSendDataBlock.enable();
+
   blinkNoNodes.set(BLINK_PERIOD, (mesh.getNodeList().size() + 1) * 2, []() {
       onFlag ? onFlag = false : onFlag = true;
       blinkNoNodes.delay(BLINK_DURATION);
@@ -144,16 +148,22 @@ void loop() {
     for (byte i = 0; i < 4; i++) {
     inStringHex += String(mfrc522.uid.uidByte[i], HEX);
     }
-    Serial.print(inStringHex);
-
+    //Serial.print(inStringHex);
+    newAssetTag = true;
   }
 
 }
-//////////////////////////////////////END LOOP ///////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////END MAIN LOOP ////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
 
 
 
 /////////////////////// END RFID FUNCTIONS /////////////////////////////////////////
+
+
+//////////////////////////WRITE TO DISK /////////////////////////////////////////////
 
 void ReadFlashFile(){
   File f = SPIFFS.open("/chain.txt", "r");
@@ -165,21 +175,19 @@ void ReadFlashFile(){
 void DeleteFlashFiles(){
   SPIFFS.remove("/chain.txt");
 }
-//////////////////////////END END END -->> MAIN LOOP ////////////////////////////////////////////
+////////////////////////////END WRITE TO DISK ///////////////////////////////////////////////
+
 
 
 //////////////////////////////// Painless Mesh Functions /////////////////////////////////////
 void sendUpdateToNodes(){
-
-}
-
-void sendMessage() {
-  String msg = "Hello from node ";
-  msg += mesh.getNodeId();
-  msg += " myFreeMemory: " + String(ESP.getFreeHeap());
-  mesh.sendBroadcast(msg);
-
-  // Send a node to a packet to meashure the trip delay //
+  if (newAssetTag) {
+    mesh.sendBroadcast(inStringHex);
+    Serial.print("Hex is sent");
+    Serial.print(inStringHex);
+    newAssetTag = false;
+    // Send a node to a packet to meashure the trip delay //
+  }
   if (calc_delay) {
     SimpleList<uint32_t>::iterator node = nodes.begin();
     while (node != nodes.end()) {
@@ -188,8 +196,34 @@ void sendMessage() {
     }
     calc_delay = false;
   }
+}
 
-  Serial.printf("Sending message: %s\n", msg.c_str());
+
+
+void sendMessage() {
+  if (newAssetTag) {
+    Serial.print("THis is now set to true");
+
+
+    Serial.print(inStringHex);
+    String msg = "Asset Tag: ";
+    msg += inStringHex;
+    //msg += mesh.getNodeId();
+    //msg += " myFreeMemory: " + String(ESP.getFreeHeap());
+    mesh.sendBroadcast(msg);
+
+    // Send a node to a packet to meashure the trip delay //
+    if (calc_delay) {
+      SimpleList<uint32_t>::iterator node = nodes.begin();
+      while (node != nodes.end()) {
+        mesh.startDelayMeas(*node);
+        node++;
+      }
+      calc_delay = false;
+    }
+    newAssetTag = false;
+  }
+  //Serial.printf("Sending message: %s\n", msg.c_str());
 
   // set an interval to send a message at random times. DO NOT HAVE TO USE
   taskSendMessage.setInterval( random(TASK_SECOND * 5, TASK_SECOND * 10));  // between 1 and 5 seconds
@@ -197,7 +231,7 @@ void sendMessage() {
 
 // from the onReceive method, from is the node that is sending. The message can be anything.
 void receivedCallback(uint32_t from, String & msg) {
-  Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
+  Serial.printf("Received from %u msg=%s\n", from, msg.c_str());
 }
 
 // When a new node is connected Fires everytime a node makes a new connection //

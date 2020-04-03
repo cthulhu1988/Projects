@@ -259,6 +259,7 @@ void receivedCallback(uint32_t from, String & msg) {
     for(int j = 12; j < 18; j++){
       Serial.print(msg[j]);
     }
+    isGenesisBlock = false;
   }
 
   Serial.printf("Node Number of Sender: %u -- Message: %s\n", from, msg.c_str());

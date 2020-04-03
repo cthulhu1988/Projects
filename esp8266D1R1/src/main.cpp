@@ -42,15 +42,6 @@ long long int trustedNodes[3] = {2731010923, 2731822602, 2731822745};
 void ReadFlashFile();
 void DeleteFlashFiles();
 
-////// Blockchain Struct //////////
-// struct block {
-//   String nodeOriginator;
-//   String assetTag;
-//   String dataHash;
-//   String prevHash;
-// };
-
-
 //////////////Class instantiation OF MESH ///////////////////////////
 Scheduler     userScheduler; // to control your personal task
 painlessMesh  mesh;
@@ -88,20 +79,7 @@ void setup() {
     Serial.println("ERROR mounting system");
     return;
   } else {Serial.println("Spiffs (Flash Storage) MOUNTED");}
-  // Open file to write to
-  // File file = SPIFFS.open("/chain.txt", "a");
-  // if (!file) {
-  //   Serial.println("There was an error opening the file for writing");
-  //   return;
-  // } else {Serial.println("chain.txt is ready" );}
-  // file.close();
 
-
-  // if (file.print("TEST")) {
-  //   Serial.println("File was written");
-  // } else {
-  //   Serial.println("File write failed");
-  // }
   pinMode(LED, OUTPUT);
   // Act on the mesh instantiation //
   mesh.setDebugMsgTypes(ERROR | DEBUG);  // set before init() so that you can see error messages
@@ -124,13 +102,11 @@ void setup() {
   blinkNoNodes.enable();
   randomSeed(analogRead(A0));
   thisNodeStr += String(mesh.getNodeId());
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////// END SETUP LOOP ////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
-
 
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -145,38 +121,32 @@ void loop() {
   delay(50);
   return;
   }
-
-
-
   /// RFID ///
-  // if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial())
-  // {
     newAssetTag = true; inStringHex = "";
     for (byte i = 0; i < 4; i++) {
     inStringHex += String(mfrc522.uid.uidByte[i], HEX);
     }
-
+    /// READ DATA FROM FLASH FILE
     if(inStringHex == "d6ac5923"){
       Serial.println("READING FLASH FILE:");
       ReadFlashFile();
+      delay(100);
     }
+
     if(inStringHex == "44c38d23"){
       Serial.println("DELETING FLASH FILE:");
       DeleteFlashFiles();
+      delay(100);
     }
-
 
     Serial.println("Asset Tag::");
     Serial.println(inStringHex);
-    //Serial.printf("String ( THIS )node value: %s\n", &thisNodeStr);
-
     String s = sha1(inStringHex);
 
 
     if(inStringHex != "44c38d23" && inStringHex != "d6ac5923" ){
 
       if(isGenesisBlock){
-
         File file = SPIFFS.open("/chain.txt", "a");
         if (file.print(s)) {
           Serial.println("The following GENESIS hash was written: ");
@@ -188,7 +158,6 @@ void loop() {
       }
 
       if(!isGenesisBlock){
-
         File file = SPIFFS.open("/chain.txt", "a");
         if (file.print(s)) {
           Serial.println("The following hash was written: ");
@@ -196,18 +165,12 @@ void loop() {
         } else {
           Serial.println("File write failed");
         }
-
       }
-    //}
+
     mfrc522.PICC_HaltA();
     if ( ! mfrc522.PICC_IsNewCardPresent() || ! mfrc522.PICC_ReadCardSerial() ) {
       return;
     }
-    // block newDataBlock;
-    // newDataBlock.nodeOriginator = thisNodeStr;
-    // newDataBlock.assetTag = inStringHex;
-    // newDataBlock.prevHash = "827c85f705c30ff73f8c1070d506656db1630007827c85f705c30ff73f8c1070d506656db1630007";
-
   }
   /////////////////////// END RFID FUNCTIONS /////////////////////////////////////////
 
@@ -281,35 +244,27 @@ void receivedCallback(uint32_t from, String & msg) {
     Serial.println();
     isGenesisBlock = false;
   } else {
-
     Serial.println("New Block in Chain ");
-
   }
 
   Serial.printf("Node Number of Sender: %u -- Message: %s\n", from, msg.c_str());
   bool memberNode = false;
   for(int i = 0; i < 3; i++){
-    if(from == trustedNodes[i]){
-      memberNode = true;
-    }
-  }
-  memberNode == true ? Serial.print("Sender IS a member Node") : Serial.print("Sender is NOT a member Node");
+    if(from == trustedNodes[i]){ memberNode = true; }   }
+  memberNode == true ? Serial.println("Sender IS a member Node") : Serial.println("Sender is NOT a member Node");
 }
 
 // When a new node is connected Fires everytime a node makes a new connection //
 void newConnectionCallback(uint32_t nodeId) {
-  // Reset blink task
   onFlag = false;
   blinkNoNodes.setIterations((mesh.getNodeList().size() + 1) * 2);
   blinkNoNodes.enableDelayed(BLINK_PERIOD - (mesh.getNodeTime() % (BLINK_PERIOD*1000))/1000);
-
   Serial.printf("New Connection, nodeId = %u\n", nodeId);
   Serial.printf("New Connection, %s\n", mesh.subConnectionJson(true).c_str());
 }
 
 void changedConnectionCallback() {
   Serial.printf("Changed connections\n");
-  // Reset blink task
   onFlag = false;
   blinkNoNodes.setIterations((mesh.getNodeList().size() + 1) * 2);
   blinkNoNodes.enableDelayed(BLINK_PERIOD - (mesh.getNodeTime() % (BLINK_PERIOD*1000))/1000);
@@ -328,10 +283,8 @@ void changedConnectionCallback() {
   calc_delay = true;
 }
 
-void nodeTimeAdjustedCallback(int32_t offset) {
+void nodeTimeAdjustedCallback(int32_t offset) {}
   //Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(), offset);
-}
-
-void delayReceivedCallback(uint32_t from, int32_t delay) {
-  //Serial.printf("Delay to node %u is %d us\n", from, delay);
-}
+//}
+void delayReceivedCallback(uint32_t from, int32_t delay) {}
+  //Serial.printf("Delay to node %u is %d us\n", from, delay);}

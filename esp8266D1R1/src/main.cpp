@@ -137,13 +137,20 @@ void setup() {
 //////////////////////////START MAIN LOOP ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
 void loop() {
-  //printf("size of genesis is %d\n", sizeof(block) );
-  // update runs various maintainance funtions
   mesh.update();
   digitalWrite(LED, !onFlag);
+
+
+  if ( ! mfrc522.PICC_IsNewCardPresent() || ! mfrc522.PICC_ReadCardSerial() ) {
+  delay(50);
+  return;
+  }
+
+
+
   /// RFID ///
-  if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial())
-  {
+  // if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial())
+  // {
     newAssetTag = true; inStringHex = "";
     for (byte i = 0; i < 4; i++) {
     inStringHex += String(mfrc522.uid.uidByte[i], HEX);
@@ -191,8 +198,11 @@ void loop() {
         }
 
       }
+    //}
+    mfrc522.PICC_HaltA();
+    if ( ! mfrc522.PICC_IsNewCardPresent() || ! mfrc522.PICC_ReadCardSerial() ) {
+      return;
     }
-
     // block newDataBlock;
     // newDataBlock.nodeOriginator = thisNodeStr;
     // newDataBlock.assetTag = inStringHex;
@@ -319,9 +329,9 @@ void changedConnectionCallback() {
 }
 
 void nodeTimeAdjustedCallback(int32_t offset) {
-  Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(), offset);
+  //Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(), offset);
 }
 
 void delayReceivedCallback(uint32_t from, int32_t delay) {
-  Serial.printf("Delay to node %u is %d us\n", from, delay);
+  //Serial.printf("Delay to node %u is %d us\n", from, delay);
 }

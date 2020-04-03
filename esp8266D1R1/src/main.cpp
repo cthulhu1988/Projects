@@ -9,7 +9,6 @@
 #include "blockchain.h"
 using namespace std;
 
-
 /////////////////////////////////////////////////////////////////////////////////////
 #define   LED             2       // GPIO number of connected LED, ON ESP-12 IS GPIO2
 #define   BLINK_PERIOD    3000 // milliseconds until cycle repeat
@@ -19,10 +18,10 @@ using namespace std;
 #define   MESH_PASSWORD   "shinycarrot"
 #define   MESH_PORT       5555
 //////////////////////////////RFID VARIABLES //////////////////////////////////
+
 // Output pins for the RFID SCANNER
 constexpr uint8_t RST_PIN =  0; constexpr uint8_t SS_PIN =  15; MFRC522 mfrc522(SS_PIN, RST_PIN);  // Create MFRC522 instance
 //////////////////////////////////////////////////////////////////////////////
-
 
 /////////////////////////// GENESIS BLOCK LOGIC /////////////////
 bool isGenesisBlock = true;
@@ -34,19 +33,15 @@ void newConnectionCallback(uint32_t nodeId);
 void changedConnectionCallback();
 void nodeTimeAdjustedCallback(int32_t offset);
 void delayReceivedCallback(uint32_t from, int32_t delay);
-
-
-/////////////////////// MEMBER NODES ///////////////////////////////
-long long int trustedNodes[3] = {2731010923, 2731822602, 2731822745};
-
 void sendMessage() ;
 Task taskSendMessage( TASK_SECOND * 1, TASK_FOREVER, &sendMessage ); // start with a one second interval
-//////////////////////////////////////////////////////////////////
-
+/////////////////////// TRUSTED MEMBER NODES ///////////////////////////////
+long long int trustedNodes[3] = {2731010923, 2731822602, 2731822745};
 
 ////////////////////////SPIFFS Prototypes ////////////////////////////////
 void ReadFlashFile();
 void DeleteFlashFiles();
+
 ////// Blockchain Struct //////////
 // struct block {
 //   String nodeOriginator;
@@ -55,12 +50,10 @@ void DeleteFlashFiles();
 //   String prevHash;
 // };
 
-//int readSize = file.readBytes((byte*) block, sizeof(block));
 
 //////////////Class instantiation OF MESH ///////////////////////////
 Scheduler     userScheduler; // to control your personal task
 painlessMesh  mesh;
-
 
 //////////////////Variables /////////////////////////////////////
 bool calc_delay = false;
@@ -74,8 +67,6 @@ String inStringHex = "";
 String thisNodeStr = "";
 
 
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////// SETUP LOOP ///////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -87,6 +78,8 @@ void setup() {
   mfrc522.PCD_Init();   // Init MFRC522
   mfrc522.PCD_DumpVersionToSerial();  // Show details of PCD - MFRC522 Card Reader details
   //////////////////////////
+
+  // Instance of blockchain //
   blockchain bChain = blockchain();
 
   // Try to mount the SPIFFS system.
@@ -100,6 +93,7 @@ void setup() {
     Serial.println("There was an error opening the file for writing");
     return;
   } else {Serial.println("chain.txt is ready" );}
+  file.close();
 
 
   // if (file.print("TEST")) {
@@ -107,26 +101,15 @@ void setup() {
   // } else {
   //   Serial.println("File write failed");
   // }
-
-  file.close();
-
-
-
   pinMode(LED, OUTPUT);
   // Act on the mesh instantiation //
   mesh.setDebugMsgTypes(ERROR | DEBUG);  // set before init() so that you can see error messages
   mesh.init(MESH_SSID, MESH_PASSWORD, &userScheduler, MESH_PORT);
-  // Sets a callback routine for any messages addressed to this node
   mesh.onReceive(&receivedCallback);
-  // fires everytime a new connection is made.
   mesh.onNewConnection(&newConnectionCallback);
-  // fires when there is a change in network topology.
   mesh.onChangedConnections(&changedConnectionCallback);
-  // fires every time local time is adjused to match the mesh.
   mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback); mesh.onNodeDelayReceived(&delayReceivedCallback);
-// Adding tasks to the queue.
   userScheduler.addTask( taskSendMessage ); taskSendMessage.enable();
-
   // Blinks number of times to indicate how many nodes are connected to the mesh
   blinkNoNodes.set(BLINK_PERIOD, (mesh.getNodeList().size() + 1) * 2, []() {
       onFlag ? onFlag = false : onFlag = true;
@@ -141,13 +124,11 @@ void setup() {
   randomSeed(analogRead(A0));
   thisNodeStr += String(mesh.getNodeId());
 
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////// END SETUP LOOP ////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
-
 
 
 
@@ -175,7 +156,7 @@ void loop() {
 
     if(isGenesisBlock){
 
-      File file = SPIFFS.open("/chain.txt", "w");
+      File file = SPIFFS.open("/chain.txt", "a");
       if (file.print(s)) {
         Serial.println("The following hash was written: ");
         Serial.println(s);

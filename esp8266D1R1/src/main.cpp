@@ -158,6 +158,18 @@ void loop() {
 
       File file = SPIFFS.open("/chain.txt", "a");
       if (file.print(s)) {
+        Serial.println("The following GENESIS hash was written: ");
+        Serial.println(s);
+      } else {
+        Serial.println("File write failed");
+      }
+
+    }
+
+    if(!isGenesisBlock){
+
+      File file = SPIFFS.open("/chain.txt", "a");
+      if (file.print(s)) {
         Serial.println("The following hash was written: ");
         Serial.println(s);
       } else {
@@ -165,6 +177,8 @@ void loop() {
       }
 
     }
+
+
     // block newDataBlock;
     // newDataBlock.nodeOriginator = thisNodeStr;
     // newDataBlock.assetTag = inStringHex;
@@ -237,10 +251,15 @@ void sendMessage() {
 void receivedCallback(uint32_t from, String & msg) {
   if(msg[0] == 'G'){
     Serial.println("This is the genesis block ");
-    for(int j = 12; j < 18; j++){
+    for(int j = 12; j < 21; j++){
       Serial.print(msg[j]);
     }
+    Serial.println();
     isGenesisBlock = false;
+  } else {
+
+    Serial.println("New Block in Chain ");
+
   }
 
   Serial.printf("Node Number of Sender: %u -- Message: %s\n", from, msg.c_str());

@@ -5,6 +5,13 @@
 #include <MFRC522.h>
 #include "Arduino.h"
 #include "FS.h"
+#include <iostream>
+using namespace std;
+
+String HashedData;
+String PreviousHash;
+String NextHash;
+
 /////////////////////////////////////////////////////////////////////////////////////
 #define   LED             2       // GPIO number of connected LED, ON ESP-12 IS GPIO2
 #define   BLINK_PERIOD    3000 // milliseconds until cycle repeat
@@ -34,11 +41,10 @@ Task taskSendMessage( TASK_SECOND * 1, TASK_FOREVER, &sendMessage ); // start wi
 
 ////// Blockchain Struct //////////
 struct block {
-  int timestamp;
   String nodeOriginator;
   String assetTag;
-  int dataHash;
-  int prevHash;
+  String dataHash;
+  String prevHash;
 };
 
 //int readSize = file.readBytes((byte*) block, sizeof(block));
@@ -90,8 +96,8 @@ void setup() {
   // Construct Genesis block in ONE node.
 
   struct block genesis;
-  genesis.timestamp = 0;
-  genesis.prevHash = 0;
+  //genesis.timestamp = 0;
+  genesis.prevHash = "0";
 
   pinMode(LED, OUTPUT);
   // Act on the mesh instantiation //
@@ -150,6 +156,17 @@ void loop() {
     //Serial.print(inStringHex);
     //Serial.printf("String ( THIS )node value: %s\n", &thisNodeStr);
 
+    String s = sha1(inStringHex);
+
+
+    block newDataBlock;
+    newDataBlock.nodeOriginator = thisNodeStr;
+    newDataBlock.assetTag = inStringHex;
+    newDataBlock.prevHash = "827c85f705c30ff73f8c1070d506656db1630007827c85f705c30ff73f8c1070d506656db1630007";
+
+
+
+    //Serial.print(s);
 
   }
   /////////////////////// END RFID FUNCTIONS /////////////////////////////////////////
@@ -208,7 +225,7 @@ void sendMessage() {
 
 // from the onReceive method, from is the node that is sending. The message can be anything.
 void receivedCallback(uint32_t from, String & msg) {
-  Serial.printf("Node Number of Sender: %u %s\n", from, msg.c_str());
+  Serial.printf("Node Number of Sender: %u -- Message: %s\n", from, msg.c_str());
 }
 
 // When a new node is connected Fires everytime a node makes a new connection //

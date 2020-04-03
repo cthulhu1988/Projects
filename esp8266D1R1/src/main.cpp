@@ -139,10 +139,12 @@ void loop() {
       delay(100);
     }
 
-    Serial.println("Asset Tag::");
+    Serial.println("#######################");
+    Serial.print("Asset Tag::");
     Serial.println(inStringHex);
-    String s = sha1(inStringHex);
+    Serial.println("#######################");
 
+    String s = sha1(inStringHex);
 
     if(inStringHex != "44c38d23" && inStringHex != "d6ac5923" ){
 
@@ -173,8 +175,6 @@ void loop() {
     }
   }
   /////////////////////// END RFID FUNCTIONS /////////////////////////////////////////
-
-
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

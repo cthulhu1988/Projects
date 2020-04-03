@@ -25,7 +25,7 @@ constexpr uint8_t RST_PIN =  0; constexpr uint8_t SS_PIN =  15; MFRC522 mfrc522(
 
 
 /////////////////////////// GENESIS BLOCK LOGIC /////////////////
-bool isGenesisBlock = false;
+bool isGenesisBlock = true;
 bool newAssetTag = false;
 
 //////////////////// PAINLESS MESH Function Prototypes /////////////////////////
@@ -37,7 +37,7 @@ void delayReceivedCallback(uint32_t from, int32_t delay);
 
 
 /////////////////////// MEMBER NODES ///////////////////////////////
-long long int trustedNodes[3] = {2731010923, 2731822602};
+long long int trustedNodes[3] = {2731010923, 2731822602, 2731822745};
 
 void sendMessage() ;
 Task taskSendMessage( TASK_SECOND * 1, TASK_FOREVER, &sendMessage ); // start with a one second interval
@@ -93,34 +93,24 @@ void setup() {
   if(!SPIFFS.begin()){
     Serial.println("ERROR mounting system");
     return;
-  } else {Serial.println("Spiffs MOUNTED");}
+  } else {Serial.println("Spiffs (Flash Storage) MOUNTED");}
   // Open file to write to
   File file = SPIFFS.open("/chain.txt", "w");
   if (!file) {
     Serial.println("There was an error opening the file for writing");
     return;
-  }
-  if (file.print("TEST")) {
-    Serial.println("File was written");
-  } else {
-    Serial.println("File write failed");
-  }
+  } else {Serial.println("chain.txt is ready" );}
+
+
+  // if (file.print("TEST")) {
+  //   Serial.println("File was written");
+  // } else {
+  //   Serial.println("File write failed");
+  // }
 
   file.close();
 
 
-
-  // File f = SPIFFS.open("/chain.txt", "w");
-  // if (!f) {
-  //   Serial.println("file open failed");
-  // }
-
-  // Check to see if genesis block has been written to memory.
-  // Construct Genesis block in ONE node.
-
-  // struct block genesis;
-  // //genesis.timestamp = 0;
-  // genesis.prevHash = "0";
 
   pinMode(LED, OUTPUT);
   // Act on the mesh instantiation //
@@ -177,26 +167,31 @@ void loop() {
     inStringHex += String(mfrc522.uid.uidByte[i], HEX);
     }
 
-    ReadFlashFile();
+    //ReadFlashFile();
     //Serial.print(inStringHex);
     //Serial.printf("String ( THIS )node value: %s\n", &thisNodeStr);
 
     String s = sha1(inStringHex);
 
+    if(isGenesisBlock){
 
+      File file = SPIFFS.open("/chain.txt", "w");
+      if (file.print(s)) {
+        Serial.println("The following hash was written: ");
+        Serial.println(s);
+      } else {
+        Serial.println("File write failed");
+      }
+
+    }
     // block newDataBlock;
     // newDataBlock.nodeOriginator = thisNodeStr;
     // newDataBlock.assetTag = inStringHex;
     // newDataBlock.prevHash = "827c85f705c30ff73f8c1070d506656db1630007827c85f705c30ff73f8c1070d506656db1630007";
 
-
-
-    //Serial.print(s);
-
   }
   /////////////////////// END RFID FUNCTIONS /////////////////////////////////////////
 
-  /// more functions //
 
 }
 
@@ -223,8 +218,18 @@ void DeleteFlashFiles(){
 
 //////////////////////////////// Painless Mesh Functions /////////////////////////////////////
 void sendMessage() {
-  if (newAssetTag) {
+  if (newAssetTag && isGenesisBlock) {
     //Serial.print(inStringHex);
+    String msg = "GENESISBLOCK ";
+    msg += inStringHex;
+    //msg += mesh.getNodeId();
+    //msg += " myFreeMemory: " + String(ESP.getFreeHeap());
+    mesh.sendBroadcast(msg);
+    isGenesisBlock = false;
+    }
+
+  if (newAssetTag && !isGenesisBlock) {
+      //Serial.print(inStringHex);
     String msg = "";
     msg += inStringHex;
     //msg += mesh.getNodeId();
@@ -242,15 +247,28 @@ void sendMessage() {
       calc_delay = false;
     }
     newAssetTag = false;
-
   //Serial.printf("Sending message: %s\n", msg.c_str());
   // set an interval to send a message at random times. DO NOT HAVE TO USE
-  taskSendMessage.setInterval( random(TASK_SECOND * 1, TASK_SECOND * 2));  // between 1 and 5 seconds
+  taskSendMessage.setInterval( random(TASK_SECOND * 1, TASK_SECOND * 3));  // between 1 and 5 seconds
 }
 
 // from the onReceive method, from is the node that is sending. The message can be anything.
 void receivedCallback(uint32_t from, String & msg) {
+  if(msg[0] == 'G'){
+    Serial.println("This is the genesis block ");
+    for(int j = 12; j < 18; j++){
+      Serial.print(msg[j]);
+    }
+  }
+
   Serial.printf("Node Number of Sender: %u -- Message: %s\n", from, msg.c_str());
+  bool memberNode = false;
+  for(int i = 0; i < 3; i++){
+    if(from == trustedNodes[i]){
+      memberNode = true;
+    }
+  }
+  memberNode == true ? Serial.print("Sender IS a member Node") : Serial.print("Sender is NOT a member Node");
 }
 
 // When a new node is connected Fires everytime a node makes a new connection //

@@ -41,7 +41,7 @@ long long int trustedNodes[3] = {2731010923, 2731822602, 2731822745};
 ////////////////////////SPIFFS Prototypes ////////////////////////////////
 void ReadFlashFile();
 void DeleteFlashFiles();
-
+void writeFlashFiles(String s);
 //////////////Class instantiation OF MESH ///////////////////////////
 Scheduler     userScheduler; // to control your personal task
 painlessMesh  mesh;
@@ -143,36 +143,23 @@ void loop() {
     Serial.print("Asset Tag::");
     Serial.println(inStringHex);
     Serial.println("#######################");
-
+    delay(50);
     String s = sha1(inStringHex);
 
     if(inStringHex != "44c38d23" && inStringHex != "d6ac5923" ){
 
       if(isGenesisBlock){
-        File file = SPIFFS.open("/chain.txt", "a");
-        if (file.print(s)) {
-          Serial.println("The following GENESIS hash was written: ");
-          Serial.println(s);
-        } else {
-          Serial.println("File write failed");
-        }
-
+        writeFlashFiles(inStringHex);
       }
 
       if(!isGenesisBlock){
-        File file = SPIFFS.open("/chain.txt", "a");
-        if (file.print(s)) {
-          Serial.println("The following hash was written: ");
-          Serial.println(s);
-        } else {
-          Serial.println("File write failed");
-        }
+        writeFlashFiles(inStringHex);
       }
 
+    }
     mfrc522.PICC_HaltA();
     if ( ! mfrc522.PICC_IsNewCardPresent() || ! mfrc522.PICC_ReadCardSerial() ) {
       return;
-    }
   }
   /////////////////////// END RFID FUNCTIONS /////////////////////////////////////////
 }
@@ -189,11 +176,23 @@ void ReadFlashFile(){
   while(f.available()){
     Serial.write(f.read());
   }
+  Serial.println();
 }
 
 void DeleteFlashFiles(){
   SPIFFS.remove("/chain.txt");
 }
+
+void writeFlashFiles(String s){
+  File file = SPIFFS.open("/chain.txt", "a");
+  if (file.print(s)) {
+    isGenesisBlock? Serial.println("The following GENESIS BLOCK was written: ") : Serial.println("The following hash was written: ");
+    Serial.println(s);
+  } else {
+    Serial.println("File write failed");
+  }
+}
+
 ////////////////////////////END WRITE TO DISK ///////////////////////////////////////////////
 
 

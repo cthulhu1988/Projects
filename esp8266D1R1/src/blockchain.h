@@ -1,15 +1,15 @@
 #ifndef BLOCKCHAIN_H
 #define BLOCKCHAIN_H
-
+#include <iostream>
 #include <cstdint>
 #include <vector>
 #include "block.h"
 using namespace std;
 
-class Blockchain {
+class blockchain {
 
   public:
-    Blockchain();
+    blockchain();
     void AddBlock(block bNew);
 
   private:

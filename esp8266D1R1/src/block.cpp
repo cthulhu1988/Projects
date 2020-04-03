@@ -1,6 +1,7 @@
 #include "block.h"
 //#include <sha256.h>
 #include <string>
+#include <iostream>
 using namespace std;
 
 

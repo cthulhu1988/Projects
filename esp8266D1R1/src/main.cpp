@@ -6,11 +6,9 @@
 #include "Arduino.h"
 #include "FS.h"
 #include <iostream>
+#include "blockchain.h"
 using namespace std;
 
-String HashedData;
-String PreviousHash;
-String NextHash;
 
 /////////////////////////////////////////////////////////////////////////////////////
 #define   LED             2       // GPIO number of connected LED, ON ESP-12 IS GPIO2
@@ -24,8 +22,12 @@ String NextHash;
 // Output pins for the RFID SCANNER
 constexpr uint8_t RST_PIN =  0; constexpr uint8_t SS_PIN =  15; MFRC522 mfrc522(SS_PIN, RST_PIN);  // Create MFRC522 instance
 //////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////// GENESIS BLOCK LOGIC /////////////////
 bool isGenesisBlock = false;
 bool newAssetTag = false;
+
 //////////////////// PAINLESS MESH Function Prototypes /////////////////////////
 void receivedCallback(uint32_t from, String & msg);
 void newConnectionCallback(uint32_t nodeId);
@@ -33,19 +35,25 @@ void changedConnectionCallback();
 void nodeTimeAdjustedCallback(int32_t offset);
 void delayReceivedCallback(uint32_t from, int32_t delay);
 
+
+/////////////////////// MEMBER NODES ///////////////////////////////
 long long int trustedNodes[3] = {2731010923, 2731822602};
 
 void sendMessage() ;
 Task taskSendMessage( TASK_SECOND * 1, TASK_FOREVER, &sendMessage ); // start with a one second interval
 //////////////////////////////////////////////////////////////////
 
+
+////////////////////////SPIFFS Prototypes ////////////////////////////////
+void ReadFlashFile();
+void DeleteFlashFiles();
 ////// Blockchain Struct //////////
-struct block {
-  String nodeOriginator;
-  String assetTag;
-  String dataHash;
-  String prevHash;
-};
+// struct block {
+//   String nodeOriginator;
+//   String assetTag;
+//   String dataHash;
+//   String prevHash;
+// };
 
 //int readSize = file.readBytes((byte*) block, sizeof(block));
 
@@ -79,7 +87,7 @@ void setup() {
   mfrc522.PCD_Init();   // Init MFRC522
   mfrc522.PCD_DumpVersionToSerial();  // Show details of PCD - MFRC522 Card Reader details
   //////////////////////////
-
+  blockchain bChain = blockchain();
 
   // Try to mount the SPIFFS system.
   if(!SPIFFS.begin()){
@@ -87,17 +95,32 @@ void setup() {
     return;
   } else {Serial.println("Spiffs MOUNTED");}
   // Open file to write to
-  File f = SPIFFS.open("/chain.txt", "w");
-  if (!f) {
-    Serial.println("file open failed");
+  File file = SPIFFS.open("/chain.txt", "w");
+  if (!file) {
+    Serial.println("There was an error opening the file for writing");
+    return;
   }
+  if (file.print("TEST")) {
+    Serial.println("File was written");
+  } else {
+    Serial.println("File write failed");
+  }
+
+  file.close();
+
+
+
+  // File f = SPIFFS.open("/chain.txt", "w");
+  // if (!f) {
+  //   Serial.println("file open failed");
+  // }
 
   // Check to see if genesis block has been written to memory.
   // Construct Genesis block in ONE node.
 
-  struct block genesis;
-  //genesis.timestamp = 0;
-  genesis.prevHash = "0";
+  // struct block genesis;
+  // //genesis.timestamp = 0;
+  // genesis.prevHash = "0";
 
   pinMode(LED, OUTPUT);
   // Act on the mesh instantiation //
@@ -153,16 +176,18 @@ void loop() {
     for (byte i = 0; i < 4; i++) {
     inStringHex += String(mfrc522.uid.uidByte[i], HEX);
     }
+
+    ReadFlashFile();
     //Serial.print(inStringHex);
     //Serial.printf("String ( THIS )node value: %s\n", &thisNodeStr);
 
     String s = sha1(inStringHex);
 
 
-    block newDataBlock;
-    newDataBlock.nodeOriginator = thisNodeStr;
-    newDataBlock.assetTag = inStringHex;
-    newDataBlock.prevHash = "827c85f705c30ff73f8c1070d506656db1630007827c85f705c30ff73f8c1070d506656db1630007";
+    // block newDataBlock;
+    // newDataBlock.nodeOriginator = thisNodeStr;
+    // newDataBlock.assetTag = inStringHex;
+    // newDataBlock.prevHash = "827c85f705c30ff73f8c1070d506656db1630007827c85f705c30ff73f8c1070d506656db1630007";
 
 
 

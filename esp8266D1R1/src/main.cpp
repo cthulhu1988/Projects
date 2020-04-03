@@ -88,12 +88,12 @@ void setup() {
     return;
   } else {Serial.println("Spiffs (Flash Storage) MOUNTED");}
   // Open file to write to
-  File file = SPIFFS.open("/chain.txt", "w");
-  if (!file) {
-    Serial.println("There was an error opening the file for writing");
-    return;
-  } else {Serial.println("chain.txt is ready" );}
-  file.close();
+  // File file = SPIFFS.open("/chain.txt", "a");
+  // if (!file) {
+  //   Serial.println("There was an error opening the file for writing");
+  //   return;
+  // } else {Serial.println("chain.txt is ready" );}
+  // file.close();
 
 
   // if (file.print("TEST")) {
@@ -148,36 +148,49 @@ void loop() {
     inStringHex += String(mfrc522.uid.uidByte[i], HEX);
     }
 
-    //ReadFlashFile();
-    //Serial.print(inStringHex);
+    if(inStringHex == "d6ac5923"){
+      Serial.println("READING FLASH FILE:");
+      ReadFlashFile();
+    }
+    if(inStringHex == "44c38d23"){
+      Serial.println("DELETING FLASH FILE:");
+      ReadFlashFile();
+    }
+
+
+    Serial.println("Asset Tag::");
+    Serial.println(inStringHex);
     //Serial.printf("String ( THIS )node value: %s\n", &thisNodeStr);
 
     String s = sha1(inStringHex);
 
-    if(isGenesisBlock){
 
-      File file = SPIFFS.open("/chain.txt", "a");
-      if (file.print(s)) {
-        Serial.println("The following GENESIS hash was written: ");
-        Serial.println(s);
-      } else {
-        Serial.println("File write failed");
+    if(inStringHex != "44c38d23" && inStringHex != "d6ac5923" ){
+
+      if(isGenesisBlock){
+
+        File file = SPIFFS.open("/chain.txt", "a");
+        if (file.print(s)) {
+          Serial.println("The following GENESIS hash was written: ");
+          Serial.println(s);
+        } else {
+          Serial.println("File write failed");
+        }
+
       }
 
-    }
+      if(!isGenesisBlock){
 
-    if(!isGenesisBlock){
+        File file = SPIFFS.open("/chain.txt", "a");
+        if (file.print(s)) {
+          Serial.println("The following hash was written: ");
+          Serial.println(s);
+        } else {
+          Serial.println("File write failed");
+        }
 
-      File file = SPIFFS.open("/chain.txt", "a");
-      if (file.print(s)) {
-        Serial.println("The following hash was written: ");
-        Serial.println(s);
-      } else {
-        Serial.println("File write failed");
       }
-
     }
-
 
     // block newDataBlock;
     // newDataBlock.nodeOriginator = thisNodeStr;

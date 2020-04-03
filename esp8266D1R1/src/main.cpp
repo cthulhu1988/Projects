@@ -154,7 +154,7 @@ void loop() {
     }
     if(inStringHex == "44c38d23"){
       Serial.println("DELETING FLASH FILE:");
-      ReadFlashFile();
+      DeleteFlashFiles();
     }
 
 

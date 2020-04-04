@@ -1,10 +1,11 @@
 #ifndef BLOCK_H
 #define BLOCK_H
-
+#include <Arduino.h>
+#include <Hash.h>
 #include <sstream>
 #include <cstdint>
 #include <iostream>
-//#include <Hash.h>
+
 using namespace std;
 
 
@@ -14,15 +15,11 @@ class block {
     string sPrevHash;
     block(uint32_t nIndexIn, const string &sDataIn);
     string GetHash();
-    void MineBlock(uint32_t nDifficulty);
 
-  private:
-    uint32_t _nIndex;
-    int64_t _nNonce;
-    string _sData;
-    string _sHash;
-    //time_t _tTime;
-    string _CalculateHash() const;
+    uint32_t nIndex;
+    string sData;
+    string sHash;
+    String CalculateHash();
 
 };
 #endif

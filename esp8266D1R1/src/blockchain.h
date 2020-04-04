@@ -4,18 +4,20 @@
 #include <cstdint>
 #include <vector>
 #include "block.h"
-using namespace std;
+#include <Arduino.h>
+#include <Hash.h>
 
+using namespace std;
 class blockchain {
 
   public:
     blockchain();
     void AddBlock(block bNew);
+    void printChain();
 
   private:
-    uint32_t _nDifficulty;
-    vector<block> _vChain;
-    block _GetLastBlock() const;
+    vector<block> vChain;
+    block GetLastBlock() const;
 };
 
 

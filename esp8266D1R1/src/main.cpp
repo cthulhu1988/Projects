@@ -6,7 +6,9 @@
 #include "Arduino.h"
 #include "FS.h"
 #include <iostream>
+#include <Stream.h>
 #include "blockchain.h"
+#include "block.h"
 using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -57,23 +59,29 @@ bool scan = true;
 String inStringHex = "";
 String thisNodeStr = "";
 
+int blockCount;
 bool writtenToFlash = false;
+
+
+
+
+
+  blockchain newChain = blockchain();
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////// SETUP LOOP ///////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
 void setup() {
+
+
   Serial.begin(115200);
   delay(4000);
+  blockCount = 0;
   //// RFID SCANNER
   SPI.begin();      // Init SPI bus
   mfrc522.PCD_Init();   // Init MFRC522
   mfrc522.PCD_DumpVersionToSerial();  // Show details of PCD - MFRC522 Card Reader details
   //////////////////////////
-
-  // Instance of blockchain //
-  blockchain bChain = blockchain();
-
   // Try to mount the SPIFFS system.
   if(!SPIFFS.begin()){
     Serial.println("ERROR mounting system");
@@ -139,6 +147,13 @@ void loop() {
       delay(100);
     }
 
+    if(inStringHex == "199219e5"){
+      Serial.println("PRINTING CHAIN :");
+      newChain.printChain();
+      delay(100);
+    }
+
+
     Serial.println("#######################");
     Serial.print("Asset Tag::");
     Serial.println(inStringHex);
@@ -146,15 +161,14 @@ void loop() {
     delay(50);
     String s = sha1(inStringHex);
 
-    if(inStringHex != "44c38d23" && inStringHex != "d6ac5923" ){
+    if(inStringHex != "44c38d23" && inStringHex != "d6ac5923" && inStringHex != "199219e5" ){
 
-      if(isGenesisBlock){
-        writeFlashFiles(inStringHex);
-      }
-
-      if(!isGenesisBlock){
-        writeFlashFiles(inStringHex);
-      }
+      blockCount++;
+      string hex = inStringHex.c_str();
+      block nBlock = block(blockCount, hex);
+      newChain.AddBlock(nBlock);
+      writeFlashFiles(inStringHex);
+      delay(100);
 
     }
     mfrc522.PICC_HaltA();

@@ -1,29 +1,23 @@
 #include "block.h"
-//#include <sha256.h>
 #include <string>
 #include <iostream>
 using namespace std;
 
-
-block::block(uint32_t nIndexIn, const string &sDataIn) : _nIndex(nIndexIn), _sData(sDataIn) {
-
-_nNonce = -1;
-//_tTime = time(nullptr);
+block::block(uint32_t nIndexIn, const string &sDataIn) : sData(sDataIn) {
 
 }
 
 string block::GetHash() {
-  return _sHash;
+  return sHash;
 }
 
-void block::MineBlock(uint32_t nDifficulty) {
-    cout << "Block mined: " << _sHash << endl;
-}
 
-inline string block::_CalculateHash() const {
-  stringstream ss;
-  ss << _nIndex << _sData << _nNonce << sPrevHash;
+String block::CalculateHash() {
+  String ss;
+  ss += nIndex;  //+= sData  += sPrevHash;
+  String hash = sha1(ss);
+
+  return hash;
 
 
-  return ss.str();//sha256(ss.str());
 }

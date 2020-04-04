@@ -1,11 +1,16 @@
 #include "blockchain.h"
 
 blockchain::blockchain() {
-    vChain.emplace_back(block(0, "GENESISBLOCK"));
+    block genBlock = block(0, "GENESISBLOCK");
+    genBlock.sPrevHash = "XXXXXXXXXXXXXXXXXXXX";
+    genBlock.sHash = genBlock.CalculateHash();
+    vChain.emplace_back(genBlock);
+
 }
 
 void blockchain::AddBlock(block bNew){
   bNew.sPrevHash = GetLastBlock().GetHash();
+  bNew.sHash = bNew.GetHash();
   vChain.push_back(bNew);
 }
 
@@ -20,11 +25,38 @@ void blockchain::printChain()
     Serial.print("BlockCount: ");
     Serial.println(i);
 
+    Serial.print("Previous Hash: ");
+    Serial.println(vChain.at(i).sPrevHash.c_str());
+
     Serial.print("Data: ");
     Serial.println(vChain.at(i).sData.c_str());
 
-    Serial.print("Hash");
-    Serial.println(vChain.at(i).sPrevHash.c_str());
+    Serial.print("This Block's Hash: ");
+    Serial.println(vChain.at(i).sHash.c_str());
+
+    Serial.println();
 
   }
+}
+
+
+String blockchain::GetStringChain()
+{
+  String wholeChain ="";
+  for (size_t i = 0; i < vChain.size(); i++) {
+    wholeChain += '{';
+
+    wholeChain += (vChain.at(i).sPrevHash.c_str());
+
+    wholeChain += '%';
+
+    wholeChain += (vChain.at(i).sData.c_str());
+
+    wholeChain += '%';
+
+    wholeChain += (vChain.at(i).sHash.c_str());
+
+    wholeChain += '}';
+  }
+  return wholeChain;
 }

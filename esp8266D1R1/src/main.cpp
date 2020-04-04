@@ -130,7 +130,7 @@ void loop() {
   return;
   }
   /// RFID ///
-    newAssetTag = true; inStringHex = "";
+    inStringHex = "";
     for (byte i = 0; i < 4; i++) {
     inStringHex += String(mfrc522.uid.uidByte[i], HEX);
     }
@@ -158,16 +158,18 @@ void loop() {
     Serial.print("Asset Tag::");
     Serial.println(inStringHex);
     Serial.println("#######################");
+    Serial.println();
     delay(50);
-    String s = sha1(inStringHex);
+
 
     if(inStringHex != "44c38d23" && inStringHex != "d6ac5923" && inStringHex != "199219e5" ){
-
-      blockCount++;
-      string hex = inStringHex.c_str();
+      newAssetTag = true;
+      String hex = inStringHex.c_str();
       block nBlock = block(blockCount, hex);
       newChain.AddBlock(nBlock);
-      writeFlashFiles(inStringHex);
+      String record = newChain.GetStringChain();
+      writeFlashFiles(record);
+      inStringHex = record;
       delay(100);
 
     }
@@ -190,6 +192,7 @@ void ReadFlashFile(){
   while(f.available()){
     Serial.write(f.read());
   }
+  f.close();
   Serial.println();
 }
 
@@ -198,7 +201,7 @@ void DeleteFlashFiles(){
 }
 
 void writeFlashFiles(String s){
-  File file = SPIFFS.open("/chain.txt", "a");
+  File file = SPIFFS.open("/chain.txt", "w");
   if (file.print(s)) {
     isGenesisBlock? Serial.println("The following GENESIS BLOCK was written: ") : Serial.println("The following hash was written: ");
     Serial.println(s);
@@ -221,6 +224,7 @@ void sendMessage() {
     //msg += " myFreeMemory: " + String(ESP.getFreeHeap());
     mesh.sendBroadcast(msg);
     isGenesisBlock = false;
+    newAssetTag = false;
     }
 
   if (newAssetTag && !isGenesisBlock) {
@@ -230,6 +234,7 @@ void sendMessage() {
     //msg += mesh.getNodeId();
     //msg += " myFreeMemory: " + String(ESP.getFreeHeap());
     mesh.sendBroadcast(msg);
+    newAssetTag = false;
     }
 
     // Send a node to a packet to meashure the trip delay //

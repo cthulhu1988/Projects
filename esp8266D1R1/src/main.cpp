@@ -281,9 +281,9 @@ void sendMessage() {
 
 // from the onReceive method, from is the node that is sending. The message can be anything.
 void receivedCallback(uint32_t from, String & msg) {
-  String prev_hash = msg.substring(1,40);
+  String prev_hash = msg.substring(1,41);
   String data_rec = msg.substring(45,53);
-  String block_hash = msg.substring(58,98);
+  String block_hash = msg.substring(57,97);
   Serial.println("prev hash");
   Serial.println(prev_hash);
   Serial.println("data ");

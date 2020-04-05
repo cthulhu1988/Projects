@@ -5,21 +5,17 @@
 #include <MFRC522.h>
 #include "Arduino.h"
 #include "FS.h"
-//#include <iostream>
-//#include <Stream.h>
 #include "blockchain.h"
 #include "block.h"
-//using namespace std;
-
 /////////////////////////////////////////////////////////////////////////////////////
-#define   LED             2       // GPIO number of connected LED, ON ESP-12 IS GPIO2
+#define   LED             2    // GPIO number of connected LED
 #define   BLINK_PERIOD    3000 // milliseconds until cycle repeat
 #define   BLINK_DURATION  200  // milliseconds LED is on for
+
 // These are network credentials unique to the peer-to-peer network.
 #define   MESH_SSID       "NETGEAR94"
 #define   MESH_PASSWORD   "shinycarrot"
 #define   MESH_PORT       5555
-//////////////////////////////RFID VARIABLES //////////////////////////////////
 
 // Output pins for the RFID SCANNER
 constexpr uint8_t RST_PIN =  0; constexpr uint8_t SS_PIN =  15; MFRC522 mfrc522(SS_PIN, RST_PIN);  // Create MFRC522 instance
@@ -36,7 +32,8 @@ void changedConnectionCallback();
 void nodeTimeAdjustedCallback(int32_t offset);
 void delayReceivedCallback(uint32_t from, int32_t delay);
 void sendMessage() ;
-Task taskSendMessage( TASK_SECOND * 2, TASK_FOREVER, &sendMessage ); // start with a one second interval
+Task taskSendMessage( TASK_SECOND * 2, TASK_FOREVER, &sendMessage ); // start with a two second interval
+
 /////////////////////// TRUSTED MEMBER NODES ///////////////////////////////
 long long int trustedNodes[3] = {2731010923, 2731822602, 2731822745};
 
@@ -49,7 +46,7 @@ void ReadLastLine();
 Scheduler     userScheduler; // to control your personal task
 painlessMesh  mesh;
 
-//////////////////Variables /////////////////////////////////////
+////////////////// Variables /////////////////////////////////////
 bool calc_delay = false;
 SimpleList<uint32_t> nodes;
 uint32 chipId = system_get_chip_id();
@@ -64,23 +61,21 @@ int blockCount;
 bool flashToSend = false;
 String lineToSend ="";
 
-
-// Instantiation of genesis block //
-blockchain newChain; //= blockchain();
-
+// Blockchain Object //
+blockchain newChain;
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////// SETUP LOOP ///////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
 void setup() {
-
-
   Serial.begin(115200);
   delay(2000);
   blockCount = 0;
+
   //// RFID SCANNER
   SPI.begin();      // Init SPI bus
   mfrc522.PCD_Init();   // Init MFRC522
   mfrc522.PCD_DumpVersionToSerial();  // Show details of PCD - MFRC522 Card Reader details
+
   //////////////////////////
   // Try to mount the SPIFFS system.
   if(!SPIFFS.begin()){
@@ -88,8 +83,6 @@ void setup() {
     return;
   } else {Serial.println("Spiffs (Flash Storage) MOUNTED");}
 
-
-  pinMode(LED, OUTPUT);
   // Act on the mesh instantiation //
   mesh.setDebugMsgTypes(ERROR | DEBUG);  // set before init() so that you can see error messages
   mesh.init(MESH_SSID, MESH_PASSWORD, &userScheduler, MESH_PORT);
@@ -99,7 +92,9 @@ void setup() {
   mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
   mesh.onNodeDelayReceived(&delayReceivedCallback);
   userScheduler.addTask( taskSendMessage ); taskSendMessage.enable();
+
   // Blinks number of times to indicate how many nodes are connected to the mesh
+  pinMode(LED, OUTPUT);
   blinkNoNodes.set(BLINK_PERIOD, (mesh.getNodeList().size() + 1) * 2, []() {
       onFlag ? onFlag = false : onFlag = true;
       blinkNoNodes.delay(BLINK_DURATION);
@@ -132,11 +127,12 @@ void loop() {
   //mesh.update();
   return;
   }
-  /// RFID ///
+    ///Read RFID data from card or fob ///
     inStringHex = "";
     for (byte i = 0; i < 4; i++) {
     inStringHex += String(mfrc522.uid.uidByte[i], HEX);
     }
+
     /// READ DATA FROM FLASH FILE
     if(inStringHex == "d6ac5923"){
       Serial.println("READING FLASH FILE:");
@@ -160,12 +156,9 @@ void loop() {
                   /// Delete Card //            /// Read flash files //       /// print blockchain ///
     if(inStringHex != "44c38d23" && inStringHex != "d6ac5923" && inStringHex != "199219e5" ){
 
-      Serial.println("vvvvvvvvvvvvvvvvvvvvvvvv");
       Serial.print("Asset Tag::");
       Serial.println(inStringHex);
-      Serial.println("^^^^^^^^^^^^^^^^^^^^^^^");
       Serial.println();
-
 
       newAssetTag = true;
       String hex = inStringHex.c_str();
@@ -183,26 +176,23 @@ void loop() {
         writeFlashFiles(record);
         writeFlashFiles("\n");
         ReadLastLine();
-
       }
-
       mesh.update();
-
     }
     mfrc522.PICC_HaltA();
     if ( ! mfrc522.PICC_IsNewCardPresent() || ! mfrc522.PICC_ReadCardSerial() ) {
       return;
   }
-  /////////////////////// END RFID FUNCTIONS /////////////////////////////////////////
+///////////////////////// END RFID FUNCTIONS /////////////////////////////////////////
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////END MAIN LOOP ////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////END MAIN LOOP ////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 
 
-//////////////////////////WRITE TO DISK /////////////////////////////////////////////
+//////////////////////////READ, WRITE, DELETE TO and from DISK //////////////////
 void ReadFlashFile(){
   File f = SPIFFS.open("/chain.txt", "r");
   while(f.available()){
@@ -222,7 +212,6 @@ void ReadLastLine(){
   lineToSend = lastLine.substring((fileSize-99), fileSize);
   flashToSend = true;
   f.close();
-  Serial.println();
 }
 
 void DeleteFlashFiles(){
@@ -233,7 +222,6 @@ void writeFlashFiles(String s){
   File file = SPIFFS.open("/chain.txt", "a");
   file.print(s);
   if(!isGenesisBlock){
-    //Serial.println("The following hash was written--> ");
     Serial.println(s);
   } else {
     Serial.println("The following GENESIS BLOCK was written: ");
@@ -247,7 +235,7 @@ void writeFlashFiles(String s){
 
 
 
-//////////////////////////////// Painless Mesh Functions /////////////////////////////////////
+////////////////////////// Painless Mesh Functions /////////////////////////////////////
 void sendMessage() {
   if (newAssetTag & flashToSend) {
     mesh.sendBroadcast(lineToSend);
@@ -297,8 +285,6 @@ void receivedCallback(uint32_t from, String & msg) {
       writeFlashFiles(msg);
       writeFlashFiles("\n");
   }
-
-
 }
 
 // When a new node is connected Fires everytime a node makes a new connection //

@@ -209,7 +209,7 @@ void ReadLastLine(){
     lastLine += char(f.read());
   }
   int fileSize = f.size();
-  lineToSend = lastLine.substring((fileSize-99), fileSize);
+  lineToSend = lastLine.substring((fileSize-109), fileSize);
   flashToSend = true;
   f.close();
 }

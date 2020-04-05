@@ -164,13 +164,13 @@ void loop() {
       String hex = inStringHex.c_str();
 
       if (isGenesisBlock) {
-        newChain = blockchain();
+        newChain = blockchain(thisNodeStr);
         String record = newChain.GetLastRecord();
         writeFlashFiles(record);
         writeFlashFiles("\n");
         ReadLastLine();
       } else {
-        block nBlock = block(blockCount, hex);
+        block nBlock = block(thisNodeStr, hex);
         newChain.AddBlock(nBlock);
         String record = newChain.GetLastRecord();
         writeFlashFiles(record);
@@ -260,6 +260,8 @@ void receivedCallback(uint32_t from, String & msg) {
   String prev_hash = msg.substring(1,41);
   String data_rec = msg.substring(45,53);
   String block_hash = msg.substring(57,97);
+  String senderNode = msg.substring(104, 114);
+
   //Serial.println(prev_hash);
   //Serial.println(data_rec);
   //Serial.println(block_hash);
@@ -274,13 +276,13 @@ void receivedCallback(uint32_t from, String & msg) {
   {
       isGenesisBlock = false;
       // start blockchain
-      newChain = blockchain();
+      newChain = blockchain(thisNodeStr);
       writeFlashFiles(msg);
       writeFlashFiles("\n");
   }
   else if(memberNode && !isGenesisBlock)
   {
-      block nBlock = block(blockCount,data_rec);
+      block nBlock = block(thisNodeStr,data_rec);
       newChain.AddBlock(nBlock);
       writeFlashFiles(msg);
       writeFlashFiles("\n");

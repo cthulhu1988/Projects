@@ -1,11 +1,13 @@
 #include "blockchain.h"
 
 blockchain::blockchain() {
-    block genBlock = block(0, "GENBLOCK");
+}
+
+blockchain::blockchain(String nodenum) {
+    block genBlock = block(nodenum, "GENBLOCK");
     genBlock.sPrevHash = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
     genBlock.sHash = genBlock.CalculateHash();
     vChain.emplace_back(genBlock);
-
 }
 
 void blockchain::AddBlock(block bNew){
@@ -30,6 +32,9 @@ void blockchain::printChain()
 
     Serial.print("Data: ");
     Serial.println(vChain.at(i).sData.c_str());
+
+    Serial.print("Block Recorded by Node: ");
+    Serial.println(vChain.at(i).nIndex.c_str());
 
     Serial.print("This Block's Hash: ");
     Serial.println(vChain.at(i).sHash.c_str());
@@ -63,6 +68,8 @@ String blockchain::GetLastRecord()
     wholeChain += (vChain.back().sData.c_str());
     wholeChain += " <> ";
     wholeChain += (vChain.back().sHash.c_str());
+    wholeChain += " <> ";
+    wholeChain += (vChain.back().nIndex.c_str());
     wholeChain += '}';
 
   return wholeChain;

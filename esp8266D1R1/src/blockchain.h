@@ -11,6 +11,7 @@ class blockchain {
 
   public:
     blockchain();
+    blockchain(String nodenum);
     void AddBlock(block bNew);
     void printChain();
     String GetStringChain();

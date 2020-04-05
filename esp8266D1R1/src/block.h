@@ -8,10 +8,10 @@ class block {
 
   public:
     String sPrevHash;
-    block(uint32_t nIndexIn, const String &sDataIn);
+    block(String nIndexIn, const String &sDataIn);
     String GetHash();
 
-    uint32_t nIndex;
+    String nIndex;
     String sData;
     String sHash;
     String CalculateHash();

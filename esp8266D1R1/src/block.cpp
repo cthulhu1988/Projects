@@ -1,7 +1,7 @@
 #include "block.h"
 #include <string>
 
-block::block(uint32_t nIndexIn, const String &sDataIn) : sData(sDataIn) {
+block::block(String nIndexIn, const String &sDataIn) : nIndex(nIndexIn), sData(sDataIn){
 
 }
 

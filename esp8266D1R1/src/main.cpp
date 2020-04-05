@@ -1,23 +1,23 @@
 #include <painlessMesh.h>
 #include <Hash.h>
-#include "ESP8266WiFi.h"
+//#include "ESP8266WiFi.h"
 #include <SPI.h>
 #include <MFRC522.h>
 #include "Arduino.h"
-#include "FS.h"
-#include <iostream>
-#include <Stream.h>
+//#include "FS.h"
+//#include <iostream>
+//#include <Stream.h>
 #include "blockchain.h"
 #include "block.h"
-using namespace std;
+//using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////////////
 #define   LED             2       // GPIO number of connected LED, ON ESP-12 IS GPIO2
 #define   BLINK_PERIOD    3000 // milliseconds until cycle repeat
 #define   BLINK_DURATION  200  // milliseconds LED is on for
 // These are network credentials unique to the peer-to-peer network.
-#define   MESH_SSID       "NETGEAR94"
-#define   MESH_PASSWORD   "shinycarrot"
+#define   MESH_SSID       "NET"
+#define   MESH_PASSWORD   "carrot"
 #define   MESH_PORT       5555
 //////////////////////////////RFID VARIABLES //////////////////////////////////
 
@@ -36,7 +36,7 @@ void changedConnectionCallback();
 void nodeTimeAdjustedCallback(int32_t offset);
 void delayReceivedCallback(uint32_t from, int32_t delay);
 void sendMessage() ;
-Task taskSendMessage( TASK_SECOND * 1, TASK_FOREVER, &sendMessage ); // start with a one second interval
+Task taskSendMessage( TASK_SECOND * 2, TASK_FOREVER, &sendMessage ); // start with a one second interval
 /////////////////////// TRUSTED MEMBER NODES ///////////////////////////////
 long long int trustedNodes[3] = {2731010923, 2731822602, 2731822745};
 
@@ -128,6 +128,7 @@ void loop() {
   // RFID sensor returns if no new tag is read.
   if ( ! mfrc522.PICC_IsNewCardPresent() || ! mfrc522.PICC_ReadCardSerial() ) {
   delay(50);
+  mesh.update();
   return;
   }
   /// RFID ///
@@ -174,9 +175,7 @@ void loop() {
         writeFlashFiles(record);
         writeFlashFiles("\n");
         ReadLastLine();
-        delay(50);
       } else {
-
         block nBlock = block(blockCount, hex);
         newChain.AddBlock(nBlock);
         String record = newChain.GetLastRecord();
@@ -186,6 +185,7 @@ void loop() {
 
       }
 
+      mesh.update();
 
     }
     mfrc522.PICC_HaltA();
@@ -217,15 +217,11 @@ void ReadLastLine(){
   while(f.available()){
     lastLine += char(f.read());
   }
-  Serial.println("LAST LINE: ");
   int fileSize = f.size();
   lineToSend = lastLine.substring((fileSize-99), fileSize);
   flashToSend = true;
-
   f.close();
   Serial.println();
-
-
 }
 
 void DeleteFlashFiles(){
@@ -243,8 +239,6 @@ void writeFlashFiles(String s){
     isGenesisBlock = false;
     Serial.println(s);
   }
-
-
   file.close();
 }
 
@@ -270,10 +264,6 @@ void sendMessage() {
       calc_delay = false;
     }
     newAssetTag = false;
-
-  //Serial.printf("Sending message: %s\n", msg.c_str());
-  // set an interval to send a message at random times. DO NOT HAVE TO USE
-  //taskSendMessage.setInterval( random(TASK_SECOND * 1, TASK_SECOND * 3));  // between 1 and 5 seconds
 }
 
 // from the onReceive method, from is the node that is sending. The message can be anything.
@@ -281,13 +271,9 @@ void receivedCallback(uint32_t from, String & msg) {
   String prev_hash = msg.substring(1,41);
   String data_rec = msg.substring(45,53);
   String block_hash = msg.substring(57,97);
-  Serial.println("prev hash");
-  Serial.println(prev_hash);
-  Serial.println("data ");
-  Serial.println(data_rec);
-  Serial.println("block hash");
-  Serial.println(block_hash);
-
+  //Serial.println(prev_hash);
+  //Serial.println(data_rec);
+  //Serial.println(block_hash);
 
   Serial.printf("Node Number of Sender: %u -- Message: %s\n", from, msg.c_str());
   bool memberNode = false;

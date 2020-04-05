@@ -44,6 +44,7 @@ long long int trustedNodes[3] = {2731010923, 2731822602, 2731822745};
 void ReadFlashFile();
 void DeleteFlashFiles();
 void writeFlashFiles(String s);
+void ReadLastLine();
 //////////////Class instantiation OF MESH ///////////////////////////
 Scheduler     userScheduler; // to control your personal task
 painlessMesh  mesh;
@@ -148,6 +149,7 @@ void loop() {
     if(inStringHex == "199219e5"){
       Serial.println("PRINTING CHAIN :");
       newChain.printChain();
+      ReadLastLine();
       delay(100);
     }
 
@@ -200,16 +202,28 @@ void loop() {
 //////////////////////////WRITE TO DISK /////////////////////////////////////////////
 void ReadFlashFile(){
   File f = SPIFFS.open("/chain.txt", "r");
-  String lastLine = "";
   while(f.available()){
     Serial.write(f.read());
-    //lastLine = char(f.read());
   }
-  Serial.print("last Line");
-  Serial.print(lastLine);
-
   f.close();
   Serial.println();
+}
+
+void ReadLastLine(){
+  String lastLine = "";
+  File f = SPIFFS.open("/chain.txt", "r");
+  while(f.available()){
+    lastLine += char(f.read());
+  }
+  Serial.println("LAST LINE: ");
+  int fileSize = f.size();
+  String newString = lastLine.substring((fileSize-98), fileSize);
+  Serial.println(lastLine);
+  Serial.println(newString);
+  f.close();
+  Serial.println();
+
+
 }
 
 void DeleteFlashFiles(){
@@ -218,17 +232,17 @@ void DeleteFlashFiles(){
 
 void writeFlashFiles(String s){
   File file = SPIFFS.open("/chain.txt", "a");
-  if (file.print(s)) {
-      if(isGenesisBlock){
-      Serial.println("The following GENESIS BLOCK was written: ");
-      isGenesisBlock = false;
-    } else {
-      Serial.println("The following hash was written--> ");
-    }
-    //Serial.println(s);
+  file.print(s);
+  if(!isGenesisBlock){
+    //Serial.println("The following hash was written--> ");
+    Serial.println(s);
   } else {
-    Serial.println("File write failed");
+    Serial.println("The following GENESIS BLOCK was written: ");
+    isGenesisBlock = false;
+    Serial.println(s);
   }
+
+
   file.close();
 }
 

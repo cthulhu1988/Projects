@@ -14,6 +14,7 @@ class blockchain {
     void AddBlock(block bNew);
     void printChain();
     String GetStringChain();
+    String GetLastRecord();
 
   private:
     vector<block> vChain;

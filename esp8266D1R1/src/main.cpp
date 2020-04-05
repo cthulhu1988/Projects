@@ -62,11 +62,8 @@ String thisNodeStr = "";
 int blockCount;
 bool writtenToFlash = false;
 
-
-
-
-
-  blockchain newChain = blockchain();
+// Instantiation of genesis block //
+blockchain newChain; //= blockchain();
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////// SETUP LOOP ///////////////////////////////////////////////////////////////////////////
@@ -75,7 +72,7 @@ void setup() {
 
 
   Serial.begin(115200);
-  delay(4000);
+  delay(2000);
   blockCount = 0;
   //// RFID SCANNER
   SPI.begin();      // Init SPI bus
@@ -87,6 +84,7 @@ void setup() {
     Serial.println("ERROR mounting system");
     return;
   } else {Serial.println("Spiffs (Flash Storage) MOUNTED");}
+
 
   pinMode(LED, OUTPUT);
   // Act on the mesh instantiation //
@@ -124,7 +122,7 @@ void loop() {
   mesh.update();
   digitalWrite(LED, !onFlag);
 
-
+  // RFID sensor returns if no new tag is read.
   if ( ! mfrc522.PICC_IsNewCardPresent() || ! mfrc522.PICC_ReadCardSerial() ) {
   delay(50);
   return;
@@ -138,19 +136,18 @@ void loop() {
     if(inStringHex == "d6ac5923"){
       Serial.println("READING FLASH FILE:");
       ReadFlashFile();
-      delay(100);
     }
 
     if(inStringHex == "44c38d23"){
       Serial.println("DELETING FLASH FILE:");
       DeleteFlashFiles();
-      delay(100);
+      //delay(100);
     }
 
     if(inStringHex == "199219e5"){
       Serial.println("PRINTING CHAIN :");
       newChain.printChain();
-      delay(100);
+      //delay(100);
     }
 
 
@@ -159,18 +156,23 @@ void loop() {
     Serial.println(inStringHex);
     Serial.println("#######################");
     Serial.println();
-    delay(50);
+    //delay(50);
 
-
+                  /// Delete Card //            /// Read flash files //       /// print blockchain ///
     if(inStringHex != "44c38d23" && inStringHex != "d6ac5923" && inStringHex != "199219e5" ){
       newAssetTag = true;
       String hex = inStringHex.c_str();
+
+      if (isGenesisBlock) {
+        newChain = blockchain();
+        isGenesisBlock = false;
+      }
+
       block nBlock = block(blockCount, hex);
       newChain.AddBlock(nBlock);
-      String record = newChain.GetStringChain();
+      String record = newChain.GetLastRecord();
       writeFlashFiles(record);
-      inStringHex = record;
-      delay(100);
+      writeFlashFiles("\n");
 
     }
     mfrc522.PICC_HaltA();
@@ -201,7 +203,7 @@ void DeleteFlashFiles(){
 }
 
 void writeFlashFiles(String s){
-  File file = SPIFFS.open("/chain.txt", "w");
+  File file = SPIFFS.open("/chain.txt", "a");
   if (file.print(s)) {
     isGenesisBlock? Serial.println("The following GENESIS BLOCK was written: ") : Serial.println("The following hash was written: ");
     Serial.println(s);
@@ -217,24 +219,19 @@ void writeFlashFiles(String s){
 //////////////////////////////// Painless Mesh Functions /////////////////////////////////////
 void sendMessage() {
   if (newAssetTag && isGenesisBlock) {
-    //Serial.print(inStringHex);
     String msg = "GENESISBLOCK ";
     msg += inStringHex;
     //msg += mesh.getNodeId();
     //msg += " myFreeMemory: " + String(ESP.getFreeHeap());
     mesh.sendBroadcast(msg);
     isGenesisBlock = false;
-    newAssetTag = false;
     }
 
   if (newAssetTag && !isGenesisBlock) {
       //Serial.print(inStringHex);
     String msg = "";
     msg += inStringHex;
-    //msg += mesh.getNodeId();
-    //msg += " myFreeMemory: " + String(ESP.getFreeHeap());
     mesh.sendBroadcast(msg);
-    newAssetTag = false;
     }
 
     // Send a node to a packet to meashure the trip delay //

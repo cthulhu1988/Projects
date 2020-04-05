@@ -260,7 +260,7 @@ void receivedCallback(uint32_t from, String & msg) {
   String prev_hash = msg.substring(1,41);
   String data_rec = msg.substring(45,53);
   String block_hash = msg.substring(57,97);
-  String senderNode = msg.substring(104, 114);
+  String senderNode = msg.substring(101, 114);
 
   //Serial.println(prev_hash);
   //Serial.println(data_rec);

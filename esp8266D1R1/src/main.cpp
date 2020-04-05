@@ -1,10 +1,10 @@
 #include <painlessMesh.h>
 #include <Hash.h>
-//#include "ESP8266WiFi.h"
+#include "ESP8266WiFi.h"
 #include <SPI.h>
 #include <MFRC522.h>
 #include "Arduino.h"
-//#include "FS.h"
+#include "FS.h"
 //#include <iostream>
 //#include <Stream.h>
 #include "blockchain.h"
@@ -16,8 +16,8 @@
 #define   BLINK_PERIOD    3000 // milliseconds until cycle repeat
 #define   BLINK_DURATION  200  // milliseconds LED is on for
 // These are network credentials unique to the peer-to-peer network.
-#define   MESH_SSID       "NET"
-#define   MESH_PASSWORD   "carrot"
+#define   MESH_SSID       "NETGEAR94"
+#define   MESH_PASSWORD   "shinycarrot"
 #define   MESH_PORT       5555
 //////////////////////////////RFID VARIABLES //////////////////////////////////
 

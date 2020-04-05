@@ -281,16 +281,16 @@ void sendMessage() {
 
 // from the onReceive method, from is the node that is sending. The message can be anything.
 void receivedCallback(uint32_t from, String & msg) {
-  if(msg[0] == 'G'){
-    Serial.println("This is the genesis block ");
-    for(int j = 12; j < 21; j++){
-      Serial.print(msg[j]);
-    }
-    Serial.println();
-    isGenesisBlock = false;
-  } else {
-    Serial.println("New Block in Chain ");
-  }
+  String prev_hash = msg.substring(1,40);
+  String data_rec = msg.substring(45,53);
+  String block_hash = msg.substring(58,98);
+  Serial.println("prev hash");
+  Serial.println(prev_hash);
+  Serial.println("data ");
+  Serial.println(data_rec);
+  Serial.println("block hash");
+  Serial.println(block_hash);
+
 
   Serial.printf("Node Number of Sender: %u -- Message: %s\n", from, msg.c_str());
   bool memberNode = false;

@@ -146,7 +146,7 @@ void loop() {
       delay(100);
     }
 
-    if(inStringHex == "199219e5"){
+    if(inStringHex == "c3371438"){
       Serial.println("PRINTING CHAIN :");
       newChain.printChain();
       delay(100);
@@ -154,7 +154,7 @@ void loop() {
 
 
                   /// Delete Card //            /// Read flash files //       /// print blockchain ///
-    if(inStringHex != "44c38d23" && inStringHex != "d6ac5923" && inStringHex != "199219e5" ){
+    if(inStringHex != "44c38d23" && inStringHex != "d6ac5923" && inStringHex != "c3371438" ){
 
       Serial.print("Asset Tag::");
       Serial.println(inStringHex);
@@ -260,7 +260,7 @@ void receivedCallback(uint32_t from, String & msg) {
   String prev_hash = msg.substring(1,41);
   String data_rec = msg.substring(45,53);
   String block_hash = msg.substring(57,97);
-  String senderNode = msg.substring(101, 114);
+  String senderNode = msg.substring(101, 113);
 
   //Serial.println(prev_hash);
   //Serial.println(data_rec);

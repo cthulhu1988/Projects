@@ -2,7 +2,7 @@
 
 blockchain::blockchain() {
     block genBlock = block(0, "GENBLOCK");
-    genBlock.sPrevHash = "XXXXXXXXXXXXXXXXXXXX";
+    genBlock.sPrevHash = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
     genBlock.sHash = genBlock.CalculateHash();
     vChain.emplace_back(genBlock);
 
@@ -59,9 +59,9 @@ String blockchain::GetLastRecord()
 {
     String wholeChain = "{";
     wholeChain += (vChain.back().sPrevHash.c_str());
-    wholeChain += '%';
+    wholeChain += " <> ";
     wholeChain += (vChain.back().sData.c_str());
-    wholeChain += '%';
+    wholeChain += " <> ";
     wholeChain += (vChain.back().sHash.c_str());
     wholeChain += '}';
 

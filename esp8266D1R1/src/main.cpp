@@ -136,27 +136,27 @@ void loop() {
     if(inStringHex == "d6ac5923"){
       Serial.println("READING FLASH FILE:");
       ReadFlashFile();
+      delay(100);
     }
 
     if(inStringHex == "44c38d23"){
       Serial.println("DELETING FLASH FILE:");
       DeleteFlashFiles();
-      //delay(100);
+      delay(100);
     }
 
     if(inStringHex == "199219e5"){
       Serial.println("PRINTING CHAIN :");
       newChain.printChain();
-      //delay(100);
+      delay(100);
     }
 
 
-    Serial.println("#######################");
+    Serial.println("vvvvvvvvvvvvvvvvvvvvvvvv");
     Serial.print("Asset Tag::");
     Serial.println(inStringHex);
-    Serial.println("#######################");
+    Serial.println("^^^^^^^^^^^^^^^^^^^^^^^");
     Serial.println();
-    //delay(50);
 
                   /// Delete Card //            /// Read flash files //       /// print blockchain ///
     if(inStringHex != "44c38d23" && inStringHex != "d6ac5923" && inStringHex != "199219e5" ){
@@ -165,14 +165,21 @@ void loop() {
 
       if (isGenesisBlock) {
         newChain = blockchain();
-        isGenesisBlock = false;
+        String record = newChain.GetLastRecord();
+        writeFlashFiles(record);
+        writeFlashFiles("\n");
+        delay(50);
+      } else {
+
+        block nBlock = block(blockCount, hex);
+        newChain.AddBlock(nBlock);
+        String record = newChain.GetLastRecord();
+        writeFlashFiles(record);
+        writeFlashFiles("\n");
+
+
       }
 
-      block nBlock = block(blockCount, hex);
-      newChain.AddBlock(nBlock);
-      String record = newChain.GetLastRecord();
-      writeFlashFiles(record);
-      writeFlashFiles("\n");
 
     }
     mfrc522.PICC_HaltA();
@@ -191,9 +198,14 @@ void loop() {
 //////////////////////////WRITE TO DISK /////////////////////////////////////////////
 void ReadFlashFile(){
   File f = SPIFFS.open("/chain.txt", "r");
+  String lastLine = "";
   while(f.available()){
     Serial.write(f.read());
+    //lastLine = char(f.read());
   }
+  Serial.print("last Line");
+  Serial.print(lastLine);
+
   f.close();
   Serial.println();
 }
@@ -205,7 +217,12 @@ void DeleteFlashFiles(){
 void writeFlashFiles(String s){
   File file = SPIFFS.open("/chain.txt", "a");
   if (file.print(s)) {
-    isGenesisBlock? Serial.println("The following GENESIS BLOCK was written: ") : Serial.println("The following hash was written: ");
+      if(isGenesisBlock){
+      Serial.println("The following GENESIS BLOCK was written: ");
+      isGenesisBlock = false;
+    } else {
+      Serial.println("The following hash was written--> ");
+    }
     Serial.println(s);
   } else {
     Serial.println("File write failed");
@@ -218,21 +235,17 @@ void writeFlashFiles(String s){
 
 //////////////////////////////// Painless Mesh Functions /////////////////////////////////////
 void sendMessage() {
-  if (newAssetTag && isGenesisBlock) {
+  if (newAssetTag) {
+
+
     String msg = "GENESISBLOCK ";
     msg += inStringHex;
-    //msg += mesh.getNodeId();
-    //msg += " myFreeMemory: " + String(ESP.getFreeHeap());
     mesh.sendBroadcast(msg);
-    isGenesisBlock = false;
+
+
+    newAssetTag = false;
     }
 
-  if (newAssetTag && !isGenesisBlock) {
-      //Serial.print(inStringHex);
-    String msg = "";
-    msg += inStringHex;
-    mesh.sendBroadcast(msg);
-    }
 
     // Send a node to a packet to meashure the trip delay //
     if (calc_delay) {
@@ -244,9 +257,11 @@ void sendMessage() {
       calc_delay = false;
     }
     newAssetTag = false;
+
+
   //Serial.printf("Sending message: %s\n", msg.c_str());
   // set an interval to send a message at random times. DO NOT HAVE TO USE
-  taskSendMessage.setInterval( random(TASK_SECOND * 1, TASK_SECOND * 3));  // between 1 and 5 seconds
+  //taskSendMessage.setInterval( random(TASK_SECOND * 1, TASK_SECOND * 3));  // between 1 and 5 seconds
 }
 
 // from the onReceive method, from is the node that is sending. The message can be anything.
@@ -303,3 +318,5 @@ void nodeTimeAdjustedCallback(int32_t offset) {}
 //}
 void delayReceivedCallback(uint32_t from, int32_t delay) {}
   //Serial.printf("Delay to node %u is %d us\n", from, delay);}
+    //msg += mesh.getNodeId();
+    //msg += " myFreeMemory: " + String(ESP.getFreeHeap());

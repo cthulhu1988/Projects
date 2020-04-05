@@ -260,8 +260,6 @@ void sendMessage() {
     newAssetTag = false;
     flashToSend = false;
     }
-
-
     // Send a node to a packet to meashure the trip delay //
     if (calc_delay) {
       SimpleList<uint32_t>::iterator node = nodes.begin();
@@ -272,7 +270,6 @@ void sendMessage() {
       calc_delay = false;
     }
     newAssetTag = false;
-
 
   //Serial.printf("Sending message: %s\n", msg.c_str());
   // set an interval to send a message at random times. DO NOT HAVE TO USE
@@ -297,6 +294,24 @@ void receivedCallback(uint32_t from, String & msg) {
   for(int i = 0; i < 3; i++){
     if(from == trustedNodes[i]){ memberNode = true; }   }
   memberNode == true ? Serial.println("Sender IS a member Node") : Serial.println("Sender is NOT a member Node");
+
+  if (memberNode && isGenesisBlock)
+  {
+      isGenesisBlock = false;
+      // start blockchain
+      newChain = blockchain();
+      writeFlashFiles(msg);
+      writeFlashFiles("\n");
+  }
+  else if(memberNode && !isGenesisBlock)
+  {
+      block nBlock = block(blockCount,data_rec);
+      newChain.AddBlock(nBlock);
+      writeFlashFiles(msg);
+      writeFlashFiles("\n");
+  }
+
+
 }
 
 // When a new node is connected Fires everytime a node makes a new connection //

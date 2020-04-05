@@ -96,7 +96,8 @@ void setup() {
   mesh.onReceive(&receivedCallback);
   mesh.onNewConnection(&newConnectionCallback);
   mesh.onChangedConnections(&changedConnectionCallback);
-  mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback); mesh.onNodeDelayReceived(&delayReceivedCallback);
+  mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
+  mesh.onNodeDelayReceived(&delayReceivedCallback);
   userScheduler.addTask( taskSendMessage ); taskSendMessage.enable();
   // Blinks number of times to indicate how many nodes are connected to the mesh
   blinkNoNodes.set(BLINK_PERIOD, (mesh.getNodeList().size() + 1) * 2, []() {
@@ -127,8 +128,8 @@ void loop() {
 
   // RFID sensor returns if no new tag is read.
   if ( ! mfrc522.PICC_IsNewCardPresent() || ! mfrc522.PICC_ReadCardSerial() ) {
-  delay(50);
-  mesh.update();
+  //delay(50);
+  //mesh.update();
   return;
   }
   /// RFID ///

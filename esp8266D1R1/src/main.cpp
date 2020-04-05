@@ -152,14 +152,16 @@ void loop() {
     }
 
 
-    Serial.println("vvvvvvvvvvvvvvvvvvvvvvvv");
-    Serial.print("Asset Tag::");
-    Serial.println(inStringHex);
-    Serial.println("^^^^^^^^^^^^^^^^^^^^^^^");
-    Serial.println();
-
                   /// Delete Card //            /// Read flash files //       /// print blockchain ///
     if(inStringHex != "44c38d23" && inStringHex != "d6ac5923" && inStringHex != "199219e5" ){
+
+      Serial.println("vvvvvvvvvvvvvvvvvvvvvvvv");
+      Serial.print("Asset Tag::");
+      Serial.println(inStringHex);
+      Serial.println("^^^^^^^^^^^^^^^^^^^^^^^");
+      Serial.println();
+
+
       newAssetTag = true;
       String hex = inStringHex.c_str();
 
@@ -223,10 +225,11 @@ void writeFlashFiles(String s){
     } else {
       Serial.println("The following hash was written--> ");
     }
-    Serial.println(s);
+    //Serial.println(s);
   } else {
     Serial.println("File write failed");
   }
+  file.close();
 }
 
 ////////////////////////////END WRITE TO DISK ///////////////////////////////////////////////

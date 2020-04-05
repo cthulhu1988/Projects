@@ -209,7 +209,7 @@ void ReadLastLine(){
     lastLine += char(f.read());
   }
   int fileSize = f.size();
-  lineToSend = lastLine.substring((fileSize-109), fileSize);
+  lineToSend = lastLine.substring((fileSize-113), fileSize);
   flashToSend = true;
   f.close();
 }
@@ -264,7 +264,7 @@ void receivedCallback(uint32_t from, String & msg) {
 
   //Serial.println(prev_hash);
   //Serial.println(data_rec);
-  //Serial.println(block_hash);
+  Serial.println(senderNode);
 
   Serial.printf("Node Number of Sender: %u -- Message: %s\n", from, msg.c_str());
   bool memberNode = false;
@@ -276,13 +276,13 @@ void receivedCallback(uint32_t from, String & msg) {
   {
       isGenesisBlock = false;
       // start blockchain
-      newChain = blockchain(thisNodeStr);
+      newChain = blockchain(senderNode);
       writeFlashFiles(msg);
       writeFlashFiles("\n");
   }
   else if(memberNode && !isGenesisBlock)
   {
-      block nBlock = block(thisNodeStr,data_rec);
+      block nBlock = block(senderNode,data_rec);
       newChain.AddBlock(nBlock);
       writeFlashFiles(msg);
       writeFlashFiles("\n");

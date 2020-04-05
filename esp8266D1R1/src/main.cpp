@@ -61,7 +61,9 @@ String inStringHex = "";
 String thisNodeStr = "";
 
 int blockCount;
-bool writtenToFlash = false;
+bool flashToSend = false;
+String lineToSend ="";
+
 
 // Instantiation of genesis block //
 blockchain newChain; //= blockchain();
@@ -149,7 +151,6 @@ void loop() {
     if(inStringHex == "199219e5"){
       Serial.println("PRINTING CHAIN :");
       newChain.printChain();
-      ReadLastLine();
       delay(100);
     }
 
@@ -172,6 +173,7 @@ void loop() {
         String record = newChain.GetLastRecord();
         writeFlashFiles(record);
         writeFlashFiles("\n");
+        ReadLastLine();
         delay(50);
       } else {
 
@@ -180,7 +182,7 @@ void loop() {
         String record = newChain.GetLastRecord();
         writeFlashFiles(record);
         writeFlashFiles("\n");
-
+        ReadLastLine();
 
       }
 
@@ -217,9 +219,9 @@ void ReadLastLine(){
   }
   Serial.println("LAST LINE: ");
   int fileSize = f.size();
-  String newString = lastLine.substring((fileSize-98), fileSize);
-  Serial.println(lastLine);
-  Serial.println(newString);
+  lineToSend = lastLine.substring((fileSize-99), fileSize);
+  flashToSend = true;
+
   f.close();
   Serial.println();
 
@@ -252,15 +254,11 @@ void writeFlashFiles(String s){
 
 //////////////////////////////// Painless Mesh Functions /////////////////////////////////////
 void sendMessage() {
-  if (newAssetTag) {
-
-
-    String msg = "GENESISBLOCK ";
-    msg += inStringHex;
-    mesh.sendBroadcast(msg);
-
-
+  if (newAssetTag & flashToSend) {
+    mesh.sendBroadcast(lineToSend);
+    lineToSend = "";
     newAssetTag = false;
+    flashToSend = false;
     }
 
 

@@ -5,11 +5,8 @@
 #include <MFRC522.h>
 #include "Arduino.h"
 #include "FS.h"
-//#include <iostream>
-//#include <Stream.h>
 #include "blockchain.h"
 #include "block.h"
-//using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////////////
 #define   LED             2       // GPIO number of connected LED, ON ESP-12 IS GPIO2

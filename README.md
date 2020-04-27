@@ -18,7 +18,7 @@ sudo apt install ./atom-amd64.deb
 // On Ubuntu 20.04 and above you may have to use the following: sudo snap install atom --classic
 
 // From a terminal install clang, git, and download project files:
-sudo apt-get install clang
+sudo apt-get install clang git
 
 // Open atom and navigate to Edit > Preferences > Install
 

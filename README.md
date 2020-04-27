@@ -16,13 +16,18 @@ The Arduino environment can be used as well if the proper libraries are installe
 Run in terminal:sudo dpkg -i atom.deb
 sudo apt install ./atom-amd64.deb
 // On Ubuntu 20.04 and above you may have to use the following: sudo snap install atom --classic
+
 // From a terminal install clang, git, and download project files:
 sudo apt-get install clang gitgit 
 clone https://github.com/cthulhu1988/Projects
 
 // Open atom and navigate to Edit > Preferences > Install
+
 // Install packages: platformio-ide and platformio-ide-terminal.
+
 // Restart atom and install the following libraries through PlatformIO: painlessMesh MFRC522
+
 // Through PlatformIO, click Open Project, select esp8266R1D1 folder.
+
 // Main.cpp file is in src directory. The Code should compile now.
 
